@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数学与统计基础 · Quant Research 知识库</title>
+  <meta name="description" content="量化研究面试的数学与统计基础：概率论、数理统计、线性代数、随机过程与时间序列、随机微积分，含难点深度拓展与面试追问演练。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="math">
+  <main class="content">
+    <h1>数学与统计基础</h1>
+    <p class="page-lead">这一页覆盖量化研究面试最核心的数理基础 Q1–Q14：概率论、数理统计与推断、线性代数、随机过程与时间序列、随机微积分。每题都保留标准答案、公式、直觉与量化应用；对真正的难点（贝叶斯更新、CLT、鞅与风险中性、协方差估计、PCA、协整、Itô 引理、GBM 等）额外配有「🔬 深度拓展」——从零开始的推导、多角度直觉、数值例子、常见误区，以及一段面试追问演练。既适合大一新生从头学，也适合求职者临阵磨枪。</p>
+
+    <div class="callout note">
+      <div class="callout-title">📐 阅读提示</div>
+      <p>公式由 KaTeX 渲染，行内用 <code>$...$</code>，块级用 <code>$$...$$</code>。每张 Q&amp;A 卡片的折叠块默认收起，点击「🔬 深度拓展」展开查看完整推导与面试演练。</p>
+    </div>
+
+    <!-- ===================== 概率论 ===================== -->
+    <h2 id="probability">概率论（Q1–Q4）</h2>
+
+    <div class="qa-card" id="q1">
+      <div class="qa-q"><span class="qa-id">Q1</span>什么是条件概率？贝叶斯公式的直觉是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>条件概率表示在 $B$ 已发生的条件下 $A$ 发生的概率：</p>
+        $$P(A \mid B) = \frac{P(A \cap B)}{P(B)}$$
+        <p>贝叶斯公式：</p>
+        $$P(A \mid B) = \frac{P(B \mid A) \cdot P(A)}{P(B)}$$
+        <p><strong>直觉</strong>：贝叶斯公式是"用新证据更新旧信念"的数学表达。这里 $P(A)$ 是先验（你原来的判断），$P(B \mid A)$ 是似然（新证据在你判断下出现的可能性），$P(A \mid B)$ 是后验（看到证据后的新判断）。</p>
+        <p><strong>量化应用</strong>：贝叶斯方法在信号衰减判断、因子择时、Black-Litterman 模型中被广泛使用。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：用一个数值例子看懂"后验更新"</summary>
+          <div class="expand-body">
+            <p><strong>从零讲起：分母 $P(B)$ 是怎么来的。</strong>全概率公式把"证据 $B$ 出现的总概率"拆成在各种假设下出现的加权和：</p>
+            $$P(B) = P(B \mid A)P(A) + P(B \mid \bar A)P(\bar A)$$
+            <p>所以贝叶斯的完整形式是：</p>
+            $$P(A \mid B) = \frac{P(B \mid A)P(A)}{P(B \mid A)P(A) + P(B \mid \bar A)P(\bar A)}$$
+
+            <p><strong>经典数值例子（疾病检测，量化里同构于"信号真伪"判断）。</strong>设某病在人群中患病率 $P(D)=1\%$；检测的灵敏度 $P(+\mid D)=99\%$，但假阳性率 $P(+\mid \bar D)=5\%$。某人检测呈阳性，他真患病的概率是多少？</p>
+            $$P(D \mid +) = \frac{0.99 \times 0.01}{0.99 \times 0.01 + 0.05 \times 0.99} = \frac{0.0099}{0.0099 + 0.0495} \approx 16.7\%$$
+            <p>结论反直觉：哪怕检测"99% 准确"，阳性者真患病的概率也只有约 <strong>17%</strong>。原因是先验 $P(D)$ 太低，海量健康人贡献的假阳性淹没了真阳性。</p>
+
+            <table>
+              <thead><tr><th></th><th>真患病 (1%)</th><th>健康 (99%)</th></tr></thead>
+              <tbody>
+                <tr><td>检测阳性</td><td>$0.99\times0.01=0.0099$</td><td>$0.05\times0.99=0.0495$</td></tr>
+                <tr><td>检测阴性</td><td>$0.0001$</td><td>$0.9405$</td></tr>
+              </tbody>
+            </table>
+
+            <p><strong>映射到量化</strong>：把 $D$ 换成"这个 alpha 信号是真的"，把 $+$ 换成"它在样本内回测亮眼"。如果你从 1000 个噪声里筛出的信号，先验本就极低，那么"回测好看"远不足以让后验变高——这正是过拟合与 Q6 多重检验问题的概率本质。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：如果灵敏度不变，把患病率从 1% 提到 30%，后验会怎么变？为什么这对策略评估有启发？</p>
+              <p><strong>理想回答</strong>：后验 $P(D\mid+)=\frac{0.99\times0.3}{0.99\times0.3+0.05\times0.7}\approx 89\%$，大幅提高。启发是：<em>提高先验质量比提高检验精度更划算</em>。在量化里，先用经济学逻辑/截面合理性把候选信号池缩小（抬高先验），再做统计检验，比海量盲筛后做修正更有效。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q2">
+      <div class="qa-q"><span class="qa-id">Q2</span>大数定律和中心极限定理的区别是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>大数定律（LLN）</strong>：样本均值随样本量增大而趋近于总体均值。强调的是<strong>收敛</strong>。</li>
+          <li><strong>中心极限定理（CLT）</strong>：无论总体分布如何，样本均值的分布在 $n$ 足够大时近似正态分布。强调的是<strong>分布形态</strong>。</li>
+        </ul>
+        <p><strong>关键区别</strong>：LLN 告诉你"平均值会收敛到真值"，CLT 告诉你"收敛过程的波动长什么样"。</p>
+        <p><strong>量化应用</strong>：CLT 是计算 VaR、构建置信区间、进行策略回测统计检验的理论基础。如果收益率不满足独立同分布假设（如存在自相关或异方差），CLT 的收敛速度会变慢，需要用 Newey-West 等方法修正。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：收敛 vs 分布形态，以及 iid 失效时怎么办</summary>
+          <div class="expand-body">
+            <p><strong>两条定理的精确陈述。</strong>设 $X_1,\dots,X_n$ iid，均值 $\mu$、方差 $\sigma^2\lt\infty$，记 $\bar X_n=\frac1n\sum X_i$。</p>
+            <p>弱大数定律（依概率收敛）：对任意 $\varepsilon\gt 0$，</p>
+            $$P\big(|\bar X_n - \mu| \gt \varepsilon\big) \to 0 \quad (n\to\infty)$$
+            <p>中心极限定理（依分布收敛）：</p>
+            $$\sqrt{n}\,(\bar X_n - \mu) \xrightarrow{d} N(0,\sigma^2),\qquad \text{即}\quad \frac{\bar X_n-\mu}{\sigma/\sqrt n}\xrightarrow{d} N(0,1)$$
+
+            <p><strong>为什么一个讲"收敛到点"，一个讲"形状"？</strong>LLN 说 $\bar X_n$ 这个随机变量塌缩成常数 $\mu$（方差 $\sigma^2/n\to0$）。但如果把这个塌缩"放大 $\sqrt n$ 倍"再看，剩下的涨落不会消失，而是稳定成一个钟形——这就是 CLT。<strong>$\sqrt n$ 这个放大倍率本身就是 LLN 收敛速率的体现</strong>：误差以 $1/\sqrt n$ 的速度缩小。</p>
+
+            <p><strong>直接的量化后果</strong>：要把标准误减半，样本量要变 4 倍。这就是为什么"再多跑几天数据"对显著性的提升越来越慢。</p>
+
+            <p><strong>iid 假设破裂时（金融收益率几乎总是如此）。</strong>当存在自相关时，$n$ 个观测的"有效信息量"远小于 $n$。普通方差估计会低估真实方差，t 统计量被人为放大。Newey-West（HAC）估计对长期方差做修正：</p>
+            $$\hat\sigma^2_{NW} = \hat\gamma_0 + 2\sum_{k=1}^{L}\Big(1-\frac{k}{L+1}\Big)\hat\gamma_k$$
+            <p>其中 $\hat\gamma_k$ 是滞后 $k$ 阶自协方差，Bartlett 权重 $1-\frac{k}{L+1}$ 保证估计半正定，$L$ 是滞后截断阶数。直觉：正自相关让相邻观测"重复计票"，必须把这些协方差加回方差里，t 值才不会虚高。</p>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 常见误区</div>
+              <p>① "n=30 就能用 CLT" 只是经验法则——若原分布极偏或厚尾（如收益率），需要更大的 $n$，甚至当 $\sigma^2=\infty$（如某些幂律尾）时 CLT 根本不成立。② LLN 不保证"赌久了一定回本"——它说的是均值收敛，不是路径回到原点（赌徒谬误）。</p>
+            </div>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：年化夏普比率的 t 检验里，自相关的收益会让你高估还是低估显著性？</p>
+              <p><strong>理想回答</strong>：正自相关（动量型策略常见）会<em>低估</em>方差从而<em>高估</em> t 值和夏普显著性；应使用 Newey-West 标准误修正。Lo（2002）专门讨论了夏普比率在非 iid 下的修正公式。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q3">
+      <div class="qa-q"><span class="qa-id">Q3</span>什么是鞅（Martingale）？它在金融中有什么意义？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>鞅是一种随机过程，满足 $E[X_{t+1} \mid \mathcal{F}_t] = X_t$，即给定当前信息，未来期望等于当前值。</p>
+        <p><strong>金融意义</strong>：</p>
+        <ul>
+          <li>在风险中性测度下，折现后的资产价格是鞅——这是期权定价的理论基础</li>
+          <li>如果市场价格是鞅，则不存在趋势性的可预测利润，与有效市场假说一致</li>
+          <li>鞅差分序列（Martingale Difference Sequence）常用于检验收益率的可预测性</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么"折现价格是鞅"等价于"无套利"</summary>
+          <div class="expand-body">
+            <p><strong>先把定义说全。</strong>一个过程 $X_t$ 关于信息流 $\mathcal F_t$ 是鞅，需满足三条：(i) $E[\,|X_t|\,]\lt\infty$（可积）；(ii) $X_t$ 关于 $\mathcal F_t$ 可测（适应）；(iii) $E[X_{t+1}\mid\mathcal F_t]=X_t$。比鞅大的叫上鞅（趋于下降），比鞅小的叫下鞅。</p>
+
+            <p><strong>真实世界里股价不是鞅。</strong>因为投资者要求风险补偿，$E[S_{t+1}\mid\mathcal F_t]\gt S_t$（带正漂移），它是个下鞅。鞅性质出现在<em>风险中性测度</em> $\mathbb Q$ 下，并且要先用无风险利率折现：</p>
+            $$\tilde S_t = \frac{S_t}{(1+r)^t},\qquad E^{\mathbb Q}\!\big[\tilde S_{t+1}\mid \mathcal F_t\big] = \tilde S_t$$
+
+            <p><strong>为什么折现后才是鞅？</strong>风险中性测度是一种"重新加权概率"的技巧：把高风险情形的概率调整到让所有资产的<em>期望收益都等于无风险利率</em>。这样一来，持有股票和持有现金的预期增长一样，折现后漂移恰好被抵消，剩下纯粹的随机涨落——即鞅。</p>
+
+            <p><strong>资产定价基本定理（直觉版）。</strong></p>
+            <ul>
+              <li><strong>第一基本定理</strong>：市场无套利 ⇔ 存在一个等价鞅测度 $\mathbb Q$，使折现价格是鞅。</li>
+              <li><strong>第二基本定理</strong>：市场完备（每个衍生品都可复制）⇔ 该测度 $\mathbb Q$ 唯一。</li>
+            </ul>
+            <p>由此，任何衍生品的无套利价格就是其折现 payoff 在 $\mathbb Q$ 下的期望：</p>
+            $$V_0 = E^{\mathbb Q}\!\Big[\frac{\text{Payoff}_T}{(1+r)^T}\Big]$$
+            <p>这正是 Black-Scholes、二叉树、蒙特卡洛定价的统一根基。</p>
+
+            <p><strong>为什么"是鞅 ⇒ 无可预测利润"？</strong>若 $\tilde S$ 是鞅，则任意"自融资"交易策略的财富过程也是鞅，其期望增量为零——你无法靠择时系统性地赚到超额收益。这与弱式有效市场（价格已反映历史信息）一致。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：鞅和"随机游走"是一回事吗？</p>
+              <p><strong>理想回答</strong>：不完全是。随机游走要求增量 iid（更强）；鞅只要求条件期望为零的增量（鞅差分），允许异方差、允许高阶相关。所以收益率可以是鞅差分（不可预测均值）但仍有波动率聚集（GARCH 效应）——这恰恰是真实市场的样子。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q4">
+      <div class="qa-q"><span class="qa-id">Q4</span>解释常见的概率分布及其在量化中的应用</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>分布</th><th>特征</th><th>量化应用</th></tr></thead>
+          <tbody>
+            <tr><td>正态分布</td><td>均值对称、薄尾</td><td>收益率建模的基准假设（但实际中有偏度和峰度）</td></tr>
+            <tr><td>对数正态分布</td><td>取对数后为正态</td><td>股票价格建模（GBM 中价格服从对数正态）</td></tr>
+            <tr><td>t 分布</td><td>厚尾</td><td>更真实地描述收益率尾部风险，小样本推断</td></tr>
+            <tr><td>泊松分布</td><td>离散事件计数</td><td>跳跃扩散模型中的跳跃次数</td></tr>
+            <tr><td>指数分布</td><td>等待时间</td><td>订单到达间隔建模（高频）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>延伸</strong>：实际收益率分布通常呈现"尖峰厚尾"（leptokurtic），正态假设会低估极端风险。用 Student-t、GED 或混合正态分布能更好地拟合。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：尖峰厚尾、正态为何低估尾部风险、QQ 图怎么读</summary>
+          <div class="expand-body">
+            <p><strong>峰度（kurtosis）量化"尖峰厚尾"。</strong>定义为标准化四阶矩：</p>
+            $$\text{Kurt}(X) = \frac{E[(X-\mu)^4]}{\sigma^4}$$
+            <p>正态分布峰度恰为 $3$；"超额峰度" $=\text{Kurt}-3$。日度股指收益的超额峰度常在 $3\sim10$ 之间，远大于 0，即<strong>leptokurtic（尖峰厚尾）</strong>：中间比正态更尖、两侧尾巴更肥。</p>
+
+            <p><strong>正态为什么低估尾部风险？</strong>正态密度尾部以 $e^{-x^2/2}$ 衰减，极快；而真实收益的尾部更接近幂律/指数衰减。举例：正态下 $5\sigma$ 事件的概率约 $2.9\times10^{-7}$（约百万年一遇），但 1987 年黑色星期一、2008、2020 这类"$5\sigma$+ 单日"在几十年里反复出现。用正态算 VaR/ES，会系统性地低估极端亏损的发生频率和幅度。</p>
+
+            <p><strong>t 分布如何救场。</strong>自由度为 $\nu$ 的 Student-t，峰度为 $3+\frac{6}{\nu-4}$（$\nu\gt4$），$\nu$ 越小尾越肥；$\nu\to\infty$ 退化为正态。拟合收益时常得到 $\nu\approx 4\sim 6$，对应明显厚尾。</p>
+
+            <p><strong>QQ 图（分位数-分位数图）怎么读。</strong>横轴是正态理论分位数，纵轴是样本经验分位数。</p>
+            <ul>
+              <li>若数据近似正态 → 点落在 45° 直线上。</li>
+              <li>若<strong>两端点向上/向下偏离直线、呈"S 形上翘下翘"</strong> → 厚尾（极端值比正态更极端），这是收益率的典型特征。</li>
+              <li>若一端系统偏离 → 偏度（非对称），如股票下行尾更肥。</li>
+            </ul>
+            <p>直觉：QQ 图的尾部点"飞出"直线，就是在用图形告诉你"正态低估了这里的概率质量"。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：为什么用对数正态描述价格、却用（近似）正态描述收益？</p>
+              <p><strong>理想回答</strong>：价格非负且乘性增长，$\ln S_T-\ln S_0=\sum$ 对数收益，若对数收益近似 iid 正态，则由可加性 $\ln S_T$ 正态，故 $S_T$ 对数正态。这与 GBM（Q14）一致：建模收益的可加结构，价格自然得到非负的对数正态分布。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 数理统计与推断 ===================== -->
+    <h2 id="statistics">数理统计与推断（Q5–Q7）</h2>
+
+    <div class="qa-card" id="q5">
+      <div class="qa-q"><span class="qa-id">Q5</span>什么是极大似然估计（MLE）？与矩估计（GMM）有什么区别？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>MLE</strong>：寻找使样本似然函数达到最大值的参数，常写作：</p>
+        $$\theta_{\text{MLE}} = \arg\max_{\theta} L(\theta)$$
+        <p><strong>GMM（广义矩估计）</strong>：利用总体矩条件与样本矩的匹配来估计参数，不需要假定完整的分布形式。</p>
+        <p><strong>核心区别</strong>：MLE 需要完整的分布假设，效率高但对错误假设敏感；GMM 更灵活，只需要矩条件，是半参数方法。</p>
+        <p><strong>量化应用</strong>：GARCH 模型常用 MLE 估计；资产定价模型（如 Fama-French）的参数常用 GMM 估计；Hansen（1982）提出的 GMM 框架是实证资产定价的核心方法论。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：手推一个 MLE，以及 GMM 的矩条件长什么样</summary>
+          <div class="expand-body">
+            <p><strong>手推 MLE（正态分布的均值与方差）。</strong>样本 $x_1,\dots,x_n$ iid $\sim N(\mu,\sigma^2)$。似然与对数似然：</p>
+            $$L(\mu,\sigma^2)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\Big(-\frac{(x_i-\mu)^2}{2\sigma^2}\Big)$$
+            $$\ell(\mu,\sigma^2)=-\frac n2\ln(2\pi)-\frac n2\ln\sigma^2-\frac{1}{2\sigma^2}\sum_{i=1}^n (x_i-\mu)^2$$
+            <p>对 $\mu$ 求偏导置零：</p>
+            $$\frac{\partial\ell}{\partial\mu}=\frac{1}{\sigma^2}\sum(x_i-\mu)=0\ \Rightarrow\ \hat\mu=\bar x$$
+            <p>对 $\sigma^2$ 求偏导置零：</p>
+            $$\frac{\partial\ell}{\partial\sigma^2}=-\frac{n}{2\sigma^2}+\frac{1}{2\sigma^4}\sum(x_i-\mu)^2=0\ \Rightarrow\ \hat\sigma^2=\frac1n\sum(x_i-\bar x)^2$$
+            <p>注意 MLE 的方差估计除以 $n$（有偏，低估），而样本方差除以 $n-1$（无偏）——这是面试常考的细节。</p>
+
+            <p><strong>GMM 的核心：矩条件。</strong>设理论模型给出一组"在真参数下期望为零"的矩函数 $g(x_t,\theta)$：</p>
+            $$E[\,g(x_t,\theta_0)\,]=0$$
+            <p>例如线性资产定价里，定价误差与因子正交就是一条矩条件。GMM 用样本矩 $\bar g(\theta)=\frac1T\sum_t g(x_t,\theta)$ 逼近 0，最小化加权二次型：</p>
+            $$\hat\theta_{GMM}=\arg\min_\theta\ \bar g(\theta)^\top W\, \bar g(\theta)$$
+            <p>最优权重 $W$ 取矩条件协方差矩阵的逆（Hansen 1982），此时估计最有效；当矩条件数 $\gt$ 参数数时，目标函数的最小值还能做 $J$ 检验（过度识别检验），判断模型设定是否被数据拒绝。</p>
+
+            <table>
+              <thead><tr><th></th><th>MLE</th><th>GMM</th></tr></thead>
+              <tbody>
+                <tr><td>需要的假设</td><td>完整分布</td><td>仅若干矩条件</td></tr>
+                <tr><td>效率</td><td>正确设定时达到 Cramér-Rao 下界</td><td>一般略低，但更稳健</td></tr>
+                <tr><td>误设风险</td><td>分布错则估计有偏</td><td>对分布形态不敏感</td></tr>
+                <tr><td>典型场景</td><td>GARCH、logistic</td><td>资产定价、IV 估计</td></tr>
+              </tbody>
+            </table>
+            <p>事实上 OLS、IV 都可看作 GMM 的特例；MLE 的一阶条件 $\frac{\partial\ell}{\partial\theta}=0$ 也是一种"得分为零"的矩条件，所以 MLE 可视为选了特定矩的 GMM。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：如果你怀疑收益率不是正态而是厚尾，你还会用高斯 MLE 估 GARCH 吗？</p>
+              <p><strong>理想回答</strong>：会，但要用<em>准极大似然（QMLE）</em>视角——即使分布设错，高斯 MLE 对 GARCH 参数仍是一致估计（Bollerslev-Wooldridge），只需用稳健（三明治）标准误。若追求效率，可改用 t 分布似然。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q6">
+      <div class="qa-q"><span class="qa-id">Q6</span>假设检验中的 p 值到底是什么？为什么不能说"p 值是假设为真的概率"？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>p 值是<strong>在零假设为真的前提下</strong>，观测到当前统计量或更极端值的概率。</p>
+        <p>不能说"零假设为真的概率"，因为 p 值是条件概率 $P(\text{data} \mid H_0)$，而不是 $P(H_0 \mid \text{data})$。后者需要贝叶斯框架。</p>
+        <p><strong>量化应用中的陷阱</strong>：</p>
+        <ul>
+          <li>策略回测中对数百个参数组合做假设检验，会出现<strong>多重检验问题</strong>（Multiple Testing）</li>
+          <li>一个 $p \lt 0.05$ 的策略，如果是从 1000 个策略中筛选出来的，真实显著性远低于 5%</li>
+          <li>修正方法：Bonferroni 校正、Benjamini-Hochberg（FDR 控制）、Bailey-López de Prado-Marcos 的 <strong>Haircut（折减）校正</strong></li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么"千里挑一"会制造假显著，以及三种修正</summary>
+          <div class="expand-body">
+            <p><strong>推导"family-wise error"为什么爆炸。</strong>设每个检验在 $H_0$ 下犯第一类错误的概率是 $\alpha=0.05$，且各检验独立。做 $m$ 个检验时，<em>至少一个</em>误判为显著的概率（族错误率 FWER）是：</p>
+            $$\text{FWER}=1-(1-\alpha)^m$$
+            <p>代数：$m=10$ 时约 $40\%$；$m=100$ 时约 $99.4\%$；$m=1000$ 时实际上必然出现假阳性。所以"从 1000 个策略里挑出 $p\lt0.05$ 的那个"几乎一定能挑到，但它很可能只是噪声里运气最好的一个——这就是<strong>数据窥探 / 选择偏差</strong>。</p>
+
+            <p><strong>期望假阳性个数</strong>：纯噪声下显著结果的期望个数是 $m\alpha$。$m=1000,\alpha=0.05$ 意味着平均 50 个"显著"策略全是假的。</p>
+
+            <p><strong>三类修正。</strong></p>
+            <ul>
+              <li><strong>Bonferroni</strong>：把阈值压到 $\alpha/m$。控制 FWER，最保守，$m$ 大时几乎拒绝一切（功效低）。</li>
+              <li><strong>Benjamini-Hochberg（BH，控 FDR）</strong>：把 $m$ 个 p 值升序排 $p_{(1)}\le\dots\le p_{(m)}$，找最大的 $k$ 使 $p_{(k)}\le \frac{k}{m}\alpha$，拒绝前 $k$ 个。它控制的是"被拒中假阳性的<em>比例</em>"而非"是否有一个假阳性"，更适合海量信号筛选。</li>
+              <li><strong>Deflated Sharpe / Haircut（López de Prado）</strong>：针对回测，把试验次数、收益的偏度峰度、序列相关都纳入，给夏普比率"打折"，得到考虑选择偏差后的真实显著性。</li>
+            </ul>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 三个常见误读</div>
+              <p>① p 值不是"$H_0$ 为真的概率"；② $1-p$ 不是"$H_1$ 为真的概率"；③ $p\lt0.05$ 不等于效应量大——大样本下微不足道的效应也能"显著"。要同时看效应量与置信区间。</p>
+            </div>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：你跑了 200 组参数，最佳那组年化夏普 2.5、$p=0.01$。你怎么判断它是不是过拟合？</p>
+              <p><strong>理想回答</strong>：先按试验次数做 Bonferroni/Deflated Sharpe 折减（200 次检验下 $p=0.01$ 远不够）；再做样本外/前推检验、参数邻域稳健性（最优点周围是否平台而非孤峰）、以及是否有经济学逻辑支撑。三者都过才相信。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q7">
+      <div class="qa-q"><span class="qa-id">Q7</span>什么是协方差矩阵？为什么在量化中估计协方差矩阵是困难的？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>协方差矩阵 $\Sigma$ 的第 $(i,j)$ 个元素是资产 $i$ 和资产 $j$ 收益率的协方差。它是组合优化、风险管理的核心输入。</p>
+        <p><strong>困难之处</strong>：</p>
+        <ol>
+          <li><strong>维度灾难</strong>：$N$ 个资产需要估计 $N(N+1)/2$ 个参数，当 $N$ 大于样本量 $T$ 时，样本协方差矩阵奇异</li>
+          <li><strong>噪声放大</strong>：样本协方差矩阵中的小特征值会被取逆时放大，导致组合权重极端</li>
+          <li><strong>非平稳性</strong>：协方差结构随时间变化</li>
+        </ol>
+        <p><strong>常用解决方案</strong>：</p>
+        <ul>
+          <li><strong>Ledoit-Wolf 收缩估计</strong>：将样本矩阵向结构化目标（如对角阵）收缩</li>
+          <li><strong>因子模型降维</strong>：假设 $\Sigma = B F B^\top + D$（因子部分 + 特异性部分）</li>
+          <li><strong>随机矩阵理论（RMT）</strong>：用 Marchenko-Pastur 分布识别并剔除噪声特征值</li>
+          <li><strong>DCC-GARCH</strong>：建模时变协方差</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么小特征值取逆会爆炸，以及收缩/RMT/因子模型怎么救</summary>
+          <div class="expand-body">
+            <p><strong>问题的数学核心：取逆放大噪声。</strong>均值-方差最优权重 $w^\star\propto \Sigma^{-1}\mu$。把 $\Sigma$ 做特征分解 $\Sigma=\sum_i \lambda_i v_i v_i^\top$，则</p>
+            $$\Sigma^{-1}=\sum_i \frac{1}{\lambda_i} v_i v_i^\top$$
+            <p>小特征值 $\lambda_i$ 出现在分母——它们恰恰是被噪声污染最严重、最不可靠的方向，取逆后 $1/\lambda_i$ 把噪声放大成天文数字，导致优化器在这些"虚假低风险"方向上下重注，权重极端、换手爆炸、样本外崩盘。这就是 Markowitz 优化"error maximizer"的恶名来源。</p>
+
+            <p><strong>维度灾难的量化。</strong>$N$ 个资产、$T$ 个观测，需估 $N(N+1)/2$ 个数。当 $q=N/T$ 不可忽略，样本协方差的特征值谱被系统性拉宽：真实相等的特征值在样本里被"劈开"，最大的被高估、最小的被低估甚至压到接近 0。$N\gt T$ 时矩阵直接奇异、不可逆。</p>
+
+            <p><strong>随机矩阵理论（Marchenko-Pastur）。</strong>若收益本是纯噪声（真实协方差为单位阵），样本相关矩阵的特征值在 $N,T\to\infty,\ q=N/T$ 固定下落在区间：</p>
+            $$\lambda_{\pm}=\big(1\pm\sqrt{q}\,\big)^2$$
+            <p>落在 $[\lambda_-,\lambda_+]$ 内的特征值无法与噪声区分，应当"清洗"（如替换为其均值）；只有显著大于 $\lambda_+$ 的特征值才是真实信号（市场/行业因子）。这给了"哪些主成分是真的"一把客观尺子。</p>
+
+            <p><strong>Ledoit-Wolf 收缩。</strong>把样本矩阵 $S$ 向结构化目标 $F$（如 $\bar\rho$ 等相关的常相关模型或对角阵）做凸组合：</p>
+            $$\hat\Sigma=\delta F+(1-\delta)S,\qquad \delta\in[0,1]$$
+            <p>$\delta$ 由最小化期望 Frobenius 误差解析给出。直觉：样本矩阵<em>无偏但高方差</em>，目标矩阵<em>有偏但低方差</em>，收缩在偏差-方差间取最优折中，顺带把小特征值抬离 0、保证可逆与良条件数。</p>
+
+            <p><strong>因子模型分解。</strong>$\Sigma=BFB^\top+D$ 把 $N\times N$ 的估计问题降到"$K$ 个因子载荷 + 对角特异方差"，参数量从 $O(N^2)$ 降到 $O(NK)$，天然非奇异、可解释（$B$ 是 beta，$F$ 是因子协方差）。Barra 风险模型即此思路。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：你有 500 只股票、250 天日收益，想做风险平价。直接用样本协方差行不行？</p>
+              <p><strong>理想回答</strong>：不行，$N=500\gt T=250$，样本协方差奇异、不可逆。要先降维/正则化：用因子模型或 Ledoit-Wolf 收缩得到良条件、可逆的 $\hat\Sigma$，或用 RMT 清洗特征值；再做风险平价配置。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 线性代数 ===================== -->
+    <h2 id="linear-algebra">线性代数（Q8–Q9）</h2>
+
+    <div class="qa-card" id="q8">
+      <div class="qa-q"><span class="qa-id">Q8</span>特征值分解（EVD）和奇异值分解（SVD）有什么区别？在量化中怎么用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>EVD</strong>：仅适用于方阵，$\Lambda$ 是特征值对角阵：</p>
+        $$A = P \Lambda P^{-1}$$
+        <p><strong>SVD</strong>：适用于任意矩阵，$\Sigma$ 是奇异值对角阵：</p>
+        $$A = U \Sigma V^\top$$
+        <p>对于对称半正定的协方差矩阵，EVD 和 SVD 等价。</p>
+        <p><strong>量化应用</strong>：</p>
+        <ul>
+          <li><strong>PCA（主成分分析）</strong>：对收益率协方差矩阵做 EVD，前几个主成分通常对应市场、规模、价值等系统性因子</li>
+          <li><strong>降噪</strong>：去除小特征值对应的成分</li>
+          <li><strong>正则化</strong>：SVD 用于病态线性回归（岭回归本质上是对奇异值做收缩）</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：PCA 如何"跑出"市场/规模/价值因子，岭回归如何收缩奇异值</summary>
+          <div class="expand-body">
+            <p><strong>PCA 与协方差 EVD 的精确关系。</strong>对去均值的收益矩阵 $R$（$T\times N$），样本协方差 $\Sigma=\frac1T R^\top R$。对 $\Sigma$ 做 EVD：$\Sigma=V\Lambda V^\top$，特征向量 $v_k$ 是第 $k$ 主成分方向，特征值 $\lambda_k$ 是该方向解释的方差。主成分得分（因子收益）$f_k=Rv_k$。这与对 $R$ 直接做 SVD $R=U\Sigma_{sv}V^\top$ 是同一件事：$\Sigma$ 的特征值 $=\Sigma_{sv}$ 奇异值的平方除以 $T$。</p>
+
+            <p><strong>为什么前几个主成分像市场/规模/价值？</strong></p>
+            <ul>
+              <li><strong>PC1（最大特征值）</strong>：载荷在所有股票上几乎同号、量级接近 → 它就是"大盘一起涨跌"的<em>市场因子</em>，通常解释 30%~50% 的总方差。</li>
+              <li><strong>PC2、PC3</strong>：载荷出现符号分化（一组正、一组负）→ 表现为"大盘股 vs 小盘股""价值 vs 成长"的对冲组合，对应<em>规模、价值</em>等风格因子。</li>
+            </ul>
+            <p>直觉：PCA 在找"最大方差方向"，而股票收益里最大的共同波动来源天然就是系统性风险，所以无监督的 PCA 会自动浮现出经济学里命名的那些因子（统计因子 vs 基本面因子的对应）。</p>
+
+            <p><strong>岭回归 = 对奇异值收缩（用 SVD 看最清楚）。</strong>设 $X=U\Sigma_{sv}V^\top$，OLS 与岭的解：</p>
+            $$\hat\beta_{OLS}=\sum_i \frac{u_i^\top y}{\sigma_i}\,v_i,\qquad \hat\beta_{ridge}=\sum_i \frac{\sigma_i}{\sigma_i^2+\lambda}\,(u_i^\top y)\,v_i$$
+            <p>OLS 在小奇异值 $\sigma_i$ 方向上 $1/\sigma_i$ 爆炸（与 Q7 同病）；岭把因子 $\frac{1}{\sigma_i}$ 换成 $\frac{\sigma_i}{\sigma_i^2+\lambda}$：大 $\sigma_i$ 几乎不变，小 $\sigma_i$ 被强烈压制。所以<strong>岭回归本质是对病态方向（多重共线性）做奇异值收缩</strong>，牺牲一点偏差换取大幅降低方差。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：PCA 因子和 Fama-French 因子有什么本质区别？哪个更适合做风险归因？</p>
+              <p><strong>理想回答</strong>：PCA 是<em>统计因子</em>，纯靠方差最大化得到，正交但缺乏经济含义、不稳定（符号/顺序可翻转，难跨期对齐）；FF 是<em>预设的基本面因子</em>，可解释、可交易、可跨期比较。风险归因和对客户解释时偏好 FF/Barra；纯降噪、找未知共同冲击时用 PCA。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q9">
+      <div class="qa-q"><span class="qa-id">Q9</span>什么是正定矩阵？为什么协方差矩阵必须半正定？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>正定矩阵满足：对任意非零向量 $x$，都有</p>
+        $$x^\top A x \gt 0$$
+        <p>半正定则要求：</p>
+        $$x^\top A x \ge 0$$
+        <p>协方差矩阵必须半正定，因为组合方差在物理意义上不能为负：</p>
+        $$w^\top \Sigma w \ge 0$$
+        <p>如果估计出的协方差矩阵不是半正定的（如用不同时间窗口的数据拼接），需要做"最近半正定矩阵"投影（如 Higham 算法）。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么 $w^\top\Sigma w$ 就是组合方差，以及如何修复非半正定矩阵</summary>
+          <div class="expand-body">
+            <p><strong>从定义推出半正定。</strong>组合收益 $R_p=\sum_i w_i R_i=w^\top R$。其方差：</p>
+            $$\text{Var}(R_p)=\text{Var}(w^\top R)=w^\top \text{Cov}(R)\, w=w^\top \Sigma w$$
+            <p>方差是平方期望，恒 $\ge 0$，且对任意权重 $w$ 都成立 → $\Sigma$ 必须半正定。等价刻画：<em>所有特征值 $\ge 0$</em>。出现负特征值就意味着存在某个组合"方差为负"，物理上不可能，是估计出错的信号。</p>
+
+            <p><strong>什么时候会estimat出非半正定？</strong>① 用不同长度/不同时间窗拼接各资产的相关系数（pairwise，缺失数据各算各的）；② 对相关矩阵手工覆盖某些元素（如把某对相关强行设为 0.9）；③ $N\gt T$ 导致秩亏。</p>
+
+            <p><strong>Higham 最近相关矩阵投影（修复思路）。</strong>对坏矩阵 $A$ 做特征分解 $A=Q\Lambda Q^\top$，把负特征值截断为 0（或一个小正数 $\epsilon$）：$\tilde\Lambda=\max(\Lambda,0)$，重构 $\tilde A=Q\tilde\Lambda Q^\top$，再把对角线归一回 1。Higham 用交替投影法在 Frobenius 范数下求"最接近原矩阵的合法相关矩阵"，保证半正定。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：优化器报错"matrix not positive definite"，你的排查顺序是什么？</p>
+              <p><strong>理想回答</strong>：先查数据对齐（是否 pairwise 删缺失、窗口是否一致）；查 $N$ 与 $T$ 是否秩亏；用特征值诊断有几个 $\le 0$；修复手段按破坏程度递进——加对角抖动 $\Sigma+\epsilon I$、Higham 投影、或干脆换 Ledoit-Wolf 收缩/因子模型从源头保证半正定。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 随机过程与时间序列 ===================== -->
+    <h2 id="time-series">随机过程与时间序列（Q10–Q12）</h2>
+
+    <div class="qa-card" id="q10">
+      <div class="qa-q"><span class="qa-id">Q10</span>什么是平稳性（Stationarity）？为什么要关心它？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>严平稳</strong>：联合分布不随时间平移改变</li>
+          <li><strong>宽平稳（弱平稳）</strong>：均值和自协方差函数不随时间变化</li>
+        </ul>
+        <p><strong>为什么关心</strong>：几乎所有时间序列建模方法（ARMA、协整分析等）都假设平稳性。对非平稳序列直接建模会产生<strong>伪回归</strong>（Spurious Regression），$R^2$ 虚高但没有真实关系。</p>
+        <p><strong>检验方法</strong>：ADF 检验、PP 检验、KPSS 检验（注意 KPSS 的零假设是平稳）。</p>
+        <p><strong>处理方法</strong>：差分（$I(1)$ 序列差分一次变平稳）、去趋势、对数变换。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：伪回归为何制造虚高 $R^2$，ADF 与 KPSS 的零假设对照</summary>
+          <div class="expand-body">
+            <p><strong>伪回归（Granger-Newbold 1974）的机制。</strong>取两条<em>完全独立</em>的随机游走 $x_t=x_{t-1}+u_t,\ y_t=y_{t-1}+v_t$（$u,v$ 互不相关），把 $y$ 对 $x$ 回归。理论上斜率应为 0、$R^2\approx0$。但实际上你会经常得到<strong>很高的 $R^2$、巨大的 t 值</strong>。</p>
+            <p>为什么？随机游走的方差随时间发散（$\text{Var}(x_t)=t\sigma^2$），两条游走在有限样本里都带着持续的"趋势状物"，OLS 误把"两者都在漂移"当成相关。更要命的是回归<strong>残差本身非平稳</strong>，违反 OLS 的基本假设，标准误公式失效、t 分布不再适用——t 值不收敛而是随样本发散，所以"越多数据越显著"，全是假象。判别信号：$R^2$ 高但 Durbin-Watson 极低（强残差自相关），$R^2\gt DW$ 是经典警报。</p>
+
+            <p><strong>ADF vs KPSS：零假设方向相反，要配合用。</strong></p>
+            <table>
+              <thead><tr><th></th><th>ADF（增广 Dickey-Fuller）</th><th>KPSS</th></tr></thead>
+              <tbody>
+                <tr><td>$H_0$ 零假设</td><td>有单位根（<strong>非平稳</strong>）</td><td>序列<strong>平稳</strong></td></tr>
+                <tr><td>$H_1$ 备择</td><td>平稳</td><td>有单位根</td></tr>
+                <tr><td>拒绝 $H_0$ 意味着</td><td>判为平稳</td><td>判为非平稳</td></tr>
+              </tbody>
+            </table>
+            <p>ADF 回归形式 $\Delta y_t=\alpha+\beta t+\gamma y_{t-1}+\sum\delta_i\Delta y_{t-i}+\varepsilon_t$，检验 $\gamma=0$（即 $\rho=1$ 单位根）。<strong>配合结论</strong>：ADF 拒绝且 KPSS 不拒绝 → 较可信地平稳；两者都拒绝或都不拒绝 → 证据矛盾，可能是分数阶整合或结构突变，需谨慎。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：股价非平稳，你要建模，第一步做什么？做完会损失什么？</p>
+              <p><strong>理想回答</strong>：取对数后做一阶差分得到对数收益率，通常即 $I(0)$ 平稳，可上 ARMA/GARCH。代价：差分丢掉了<em>水平信息（长期均衡关系）</em>——若两资产协整，单独差分会损失配对交易赖以生存的均值回复信号，这时应改用协整/误差修正模型（见 Q12）而非各自差分。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q11">
+      <div class="qa-q"><span class="qa-id">Q11</span>ARIMA 和 GARCH 模型的区别与联系？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>ARIMA(p,d,q)</strong>：建模条件均值。描述收益率本身的自回归和移动平均结构。</li>
+          <li><strong>GARCH(p,q)</strong>：建模条件方差。描述波动率的聚集效应（volatility clustering）。</li>
+        </ul>
+        <p><strong>联系</strong>：通常组合使用，ARIMA 建模均值方程，GARCH 建模残差的方差方程。完整模型：</p>
+        $$r_t = \mu_t(\text{ARIMA}) + \epsilon_t, \quad \epsilon_t = \sigma_t z_t, \quad \sigma_t^2 = \omega + \alpha \epsilon_{t-1}^2 + \beta \sigma_{t-1}^2$$
+        <p><strong>量化应用</strong>：GARCH 族模型广泛用于波动率预测、VaR 计算、期权隐含波动率建模。常用扩展包括 EGARCH（捕捉杠杆效应）、GJR-GARCH 等。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：完整的均值+方差模型、波动率聚集与 EGARCH 杠杆效应</summary>
+          <div class="expand-body">
+            <p><strong>把完整模型逐层写清。</strong>第一层<em>均值方程</em>（ARMA(1,1) 为例）：</p>
+            $$r_t=\mu+\phi\, r_{t-1}+\theta\,\epsilon_{t-1}+\epsilon_t$$
+            <p>第二层<em>残差结构</em>：$\epsilon_t=\sigma_t z_t,\quad z_t\overset{iid}{\sim}(0,1)$（标准正态或 t）。第三层<em>方差方程</em>（GARCH(1,1)）：</p>
+            $$\sigma_t^2=\omega+\alpha\,\epsilon_{t-1}^2+\beta\,\sigma_{t-1}^2,\qquad \omega\gt0,\ \alpha,\beta\ge0$$
+            <p><strong>参数含义与平稳条件。</strong>$\alpha$ 是对"上期冲击大小"的反应（新息），$\beta$ 是"波动率的记忆/惯性"。平稳（方差有限）要求 $\alpha+\beta\lt1$，此时长期（无条件）方差为：</p>
+            $$\bar\sigma^2=\frac{\omega}{1-\alpha-\beta}$$
+            <p>$\alpha+\beta$ 越接近 1，波动率冲击衰减越慢、记忆越长（金融数据常见 $\approx0.95\sim0.99$）。</p>
+
+            <p><strong>波动率聚集（volatility clustering）为何被它捕捉。</strong>市场现象："大波动后面常跟大波动，小波动后面跟小波动"（Mandelbrot 观察）。GARCH 里 $\sigma_t^2$ 显式依赖 $\epsilon_{t-1}^2$ 和 $\sigma_{t-1}^2$——昨天剧烈，今天的条件方差就被抬高，从而再现聚集。注意收益<em>本身</em>近似不可预测（均值是鞅差分），但收益的<em>平方/绝对值</em>有强自相关，这正是 GARCH 的用武之地。</p>
+
+            <p><strong>EGARCH 与杠杆效应。</strong>标准 GARCH 用 $\epsilon_{t-1}^2$，对正负冲击对称；但股市有<strong>杠杆效应</strong>：同样幅度的下跌比上涨更推高波动率。EGARCH（Nelson 1991）建模对数方差并引入非对称项：</p>
+            $$\ln\sigma_t^2=\omega+\beta\ln\sigma_{t-1}^2+\alpha\Big(|z_{t-1}|-E|z_{t-1}|\Big)+\gamma\, z_{t-1}$$
+            <p>$\gamma\lt0$ 时，负的 $z_{t-1}$（下跌）会额外推高 $\sigma_t^2$，刻画杠杆效应；用对数形式还自动保证 $\sigma_t^2\gt0$，无需对参数加非负约束。GJR-GARCH 则用一个示性项 $\mathbf 1\{\epsilon_{t-1}\lt0\}\,\epsilon_{t-1}^2$ 达到类似目的。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：GARCH(1,1) 估出来 $\alpha+\beta=0.999$，说明什么？怎么办？</p>
+              <p><strong>理想回答</strong>：接近 IGARCH，波动率冲击几乎永不衰减、无条件方差趋于无穷，常是结构突变（如危机期混入）或模型设定不足造成的伪持久性。应对：检查/纳入结构断点、改用成分 GARCH（长短期分离）或 FIGARCH（长记忆），并用稳健标准误。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q12">
+      <div class="qa-q"><span class="qa-id">Q12</span>什么是协整（Cointegration）？和相关性有什么区别？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>相关性</strong>：衡量两个变量线性关联的强度，是静态的</li>
+          <li><strong>协整</strong>：两个非平稳序列的某个线性组合是平稳的，是动态的长期均衡关系</li>
+        </ul>
+        <p><strong>经典例子</strong>：醉汉和他的狗——各自随机游走（非平稳），但距离围绕某个均值波动（协整）。</p>
+        <p><strong>量化应用</strong>：配对交易（Pairs Trading）的理论基础。找到协整关系后：</p>
+        <ol>
+          <li>构建价差 $S_t = Y_t - \beta X_t$</li>
+          <li>当价差偏离均值时建仓，回归时平仓</li>
+          <li>常用 Engle-Granger 两步法或 Johansen 检验判断协整关系</li>
+        </ol>
+        <p><strong>注意</strong>：高相关不代表协整，协整也不要求高相关。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：醉汉与狗的直觉、Engle-Granger 两步法、为何高相关≠协整</summary>
+          <div class="expand-body">
+            <p><strong>醉汉与狗，讲透。</strong>醉汉的位置 $X_t$ 是随机游走（非平稳，方差发散），狗的位置 $Y_t$ 也是随机游走。但狗被绳子拴着，不会离醉汉太远——它们的<em>差</em> $Y_t-X_t$ 是平稳的、围绕绳长均值波动。<strong>各自不可预测其绝对位置，但"相对距离"会均值回复</strong>，这就是协整：单看每个是 $I(1)$，存在一个线性组合是 $I(0)$。配对交易赚的就是"距离拉大后会收回"这口钱。</p>
+
+            <p><strong>Engle-Granger 两步法。</strong></p>
+            <ol>
+              <li><strong>第一步（估均衡）</strong>：对两条 $I(1)$ 序列做 OLS 回归 $Y_t=\alpha+\beta X_t+u_t$，得到对冲比率 $\hat\beta$ 和残差 $\hat u_t=Y_t-\hat\alpha-\hat\beta X_t$（即价差）。</li>
+              <li><strong>第二步（检残差平稳）</strong>：对残差 $\hat u_t$ 做 ADF 检验。若残差平稳 → 两序列协整，$\hat\beta$ 是长期均衡的对冲比率；若残差仍非平稳 → 不协整，回归是伪回归。</li>
+            </ol>
+            <p>有了协整还可写<strong>误差修正模型（ECM）</strong>：$\Delta Y_t=\gamma(\,Y_{t-1}-\beta X_{t-1})+\dots+\varepsilon_t$，$\gamma\lt0$ 表示偏离均衡后以速度 $|\gamma|$ 拉回——这正是建仓/平仓的统计依据。多资产时用 Johansen 检验（基于 VECM，可识别多个协整向量，且对方向对称）。</p>
+
+            <p><strong>为什么高相关 ≠ 协整（也不互相蕴含）。</strong></p>
+            <ul>
+              <li><em>高相关但不协整</em>：两条同向漂移的独立随机游走在样本内可呈现高相关（伪相关，见 Q10），但价差仍非平稳、会无限拉大，价差交易必爆仓。</li>
+              <li><em>协整但不高相关</em>：两序列长期被同一均衡锚定（价差平稳），但短期日度变动的相关可以很低。</li>
+            </ul>
+            <p>关键：相关性看的是<em>同期变动方向</em>（短期、静态），协整看的是<em>水平是否被长期均衡绑定</em>（长期、动态）。配对交易必须用协整而非相关来选标的。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：你的配对策略上线半年后开始持续亏损，价差不回归了，怎么判断与处理？</p>
+              <p><strong>理想回答</strong>：先怀疑<em>协整关系破裂</em>（基本面变化、并购、行业政策）。用滚动窗口重新做协整检验、看价差是否出现单位根/结构突变（如 Gregory-Hansen 含突变的协整检验）。若关系确已失效应止损退出，而非加仓摊平——协整不是永恒的，需定期再检验。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 随机微积分基础 ===================== -->
+    <h2 id="stochastic-calculus">随机微积分基础（Q13–Q14）</h2>
+
+    <div class="qa-card" id="q13">
+      <div class="qa-q"><span class="qa-id">Q13</span>什么是布朗运动？Itô 引理是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>布朗运动（维纳过程）</strong> $W_t$：</p>
+        <ul>
+          <li>$W_0 = 0$</li>
+          <li>增量独立且服从 $W_{t+s} - W_t \sim N(0, s)$</li>
+          <li>路径连续但处处不可微</li>
+        </ul>
+        <p><strong>Itô 引理</strong>：随机微积分的"链式法则"。若 $dX_t = \mu \, dt + \sigma \, dW_t$，则对 $f(X_t, t)$：</p>
+        $$df = \left(\frac{\partial f}{\partial t} + \mu \frac{\partial f}{\partial x} + \frac{1}{2}\sigma^2 \frac{\partial^2 f}{\partial x^2}\right)dt + \sigma \frac{\partial f}{\partial x} dW_t$$
+        <p>比普通链式法则多了 $\frac{1}{2}\sigma^2 f''$ 项，因为 $(dW_t)^2 = dt$。</p>
+        <p><strong>量化应用</strong>：推导 Black-Scholes 公式、理解对冲比率（Delta）、推导各种衍生品定价公式。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：用泰勒展开 + $(dW)^2=dt$ 启发式地"凑出"那一项</summary>
+          <div class="expand-body">
+            <p><strong>核心反常识：为什么会冒出一个二阶项。</strong>普通微积分里 $df=f'\,dx$，因为 $dx$ 的高阶项可忽略。但布朗运动太"毛糙"——它处处不可微，增量量级是 $dW\sim\sqrt{dt}$（因为 $\text{Var}(dW)=dt$），于是 $(dW)^2\sim dt$ 与一阶项同阶，<strong>不能丢</strong>。这就是多出 $\frac12\sigma^2 f''$ 的根源。</p>
+
+            <p><strong>启发式推导（面试白板版）。</strong>对 $f(X_t,t)$ 做二阶泰勒展开：</p>
+            $$df=\frac{\partial f}{\partial t}dt+\frac{\partial f}{\partial x}dX+\frac12\frac{\partial^2 f}{\partial x^2}(dX)^2+\dots$$
+            <p>代入 $dX=\mu\,dt+\sigma\,dW$，计算 $(dX)^2$，并使用 Itô 的"乘法表"：</p>
+            $$(dW)^2=dt,\qquad dt\cdot dW=0,\qquad (dt)^2=0$$
+            <p>于是</p>
+            $$(dX)^2=\mu^2(dt)^2+2\mu\sigma\,dt\,dW+\sigma^2(dW)^2=\sigma^2\,dt$$
+            <p>（前两项是高阶小量，归零；只有 $\sigma^2(dW)^2=\sigma^2 dt$ 存活。）代回：</p>
+            $$df=\Big(\frac{\partial f}{\partial t}+\mu\frac{\partial f}{\partial x}+\tfrac12\sigma^2\frac{\partial^2 f}{\partial x^2}\Big)dt+\sigma\frac{\partial f}{\partial x}\,dW$$
+            <p><strong>为什么 $(dW)^2=dt$？</strong>把 $[0,t]$ 切成 $n$ 份，$\sum(\Delta W_i)^2$ 的期望是 $\sum\Delta t_i=t$，且其方差随 $n\to\infty$ 趋于 0（二次变差收敛到 $t$）。所以在极限意义下 $(dW)^2$ 不是随机的小量，而<em>确定地</em>等于 $dt$——这是 Itô 微积分区别于普通微积分的命门。</p>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ Itô 积分 vs 普通积分的"违和感"</div>
+              <p>$\int_0^t W_s\,dW_s=\frac12 W_t^2-\frac12 t$，比普通微积分的 $\frac12 W_t^2$ 多了 $-\frac12 t$。这正是 Itô 项在积分形式下的体现，常被用来考你是否真懂二次变差。</p>
+            </div>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：用 Itô 引理求 $d(\ln S_t)$，其中 $dS=\mu S\,dt+\sigma S\,dW$。</p>
+              <p><strong>理想回答</strong>：取 $f=\ln S$，$f'=1/S,\ f''=-1/S^2$。代入：$d\ln S=\big(\mu-\tfrac12\sigma^2\big)dt+\sigma\,dW$。那个 $-\tfrac12\sigma^2$ 就是 Itô 修正项，也正是 GBM 漂移里"波动率拖累"的来源（见 Q14）。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q14">
+      <div class="qa-q"><span class="qa-id">Q14</span>几何布朗运动（GBM）的假设和局限是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>GBM 模型：</p>
+        $$dS_t = \mu S_t \, dt + \sigma S_t \, dW_t$$
+        <p>解为：</p>
+        $$S_t = S_0 \exp\left[\left(\mu - \frac{\sigma^2}{2}\right)t + \sigma W_t\right]$$
+        <p><strong>假设</strong>：</p>
+        <ul>
+          <li>对数收益率独立同分布且服从正态</li>
+          <li>波动率恒定</li>
+          <li>无跳跃</li>
+        </ul>
+        <p><strong>局限</strong>：</p>
+        <ul>
+          <li>实际中波动率不恒定（波动率微笑/偏斜）</li>
+          <li>收益率有厚尾（极端事件被低估）</li>
+          <li>存在跳跃（如财报发布、政策突变）</li>
+          <li>收益率存在自相关和波动率聚集</li>
+        </ul>
+        <p><strong>改进模型</strong>：随机波动率模型（Heston）、跳跃扩散模型（Merton）、局部波动率模型（Dupire）。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：对 $\ln S$ 用 Itô 闭式求解 GBM，并逐条对应"修复模型"</summary>
+          <div class="expand-body">
+            <p><strong>用 Itô 引理推闭式解（衔接 Q13）。</strong>设 $Y_t=\ln S_t$，由上一题结果：</p>
+            $$dY_t=\Big(\mu-\tfrac12\sigma^2\Big)dt+\sigma\,dW_t$$
+            <p>右边漂移和扩散都是常数，可直接积分 $0\to t$：</p>
+            $$Y_t-Y_0=\Big(\mu-\tfrac12\sigma^2\Big)t+\sigma W_t$$
+            <p>指数还原（$S_t=e^{Y_t}$）：</p>
+            $$S_t=S_0\exp\!\Big[\Big(\mu-\tfrac12\sigma^2\Big)t+\sigma W_t\Big]$$
+            <p><strong>读懂这个解。</strong>(i) 指数保证 $S_t\gt0$（股价不会变负）；(ii) $\ln S_t\sim N\big(\ln S_0+(\mu-\tfrac12\sigma^2)t,\ \sigma^2 t\big)$，故 $S_t$ 服从对数正态（呼应 Q4）；(iii) 漂移里的 $-\tfrac12\sigma^2$ 是<strong>波动率拖累（volatility drag）</strong>——这就是为什么 $E[S_t]=S_0 e^{\mu t}$（期望按 $\mu$ 增长），但<em>中位数/几何平均增长率</em>只有 $\mu-\tfrac12\sigma^2$。波动越大，复利路径的典型增长越被侵蚀，这对杠杆 ETF 长持衰减有直接含义。</p>
+
+            <p><strong>三个假设 → 三个被现实证伪的地方 → 三个修复模型。</strong></p>
+            <table>
+              <thead><tr><th>GBM 假设</th><th>现实反例</th><th>修复模型</th></tr></thead>
+              <tbody>
+                <tr><td>波动率 $\sigma$ 恒定</td><td>波动率微笑/偏斜：不同行权价/到期日隐含波动率不同</td><td><strong>Heston</strong>（随机波动率，$\sigma$ 自己服从 CIR 过程）；<strong>Dupire</strong>（局部波动率 $\sigma(S,t)$ 完美拟合当前波动率曲面）</td></tr>
+                <tr><td>路径连续、无跳跃</td><td>财报、政策、危机造成隔夜跳空</td><td><strong>Merton 跳跃扩散</strong>：GBM 叠加泊松跳（呼应 Q4 泊松分布）</td></tr>
+                <tr><td>对数收益 iid 正态</td><td>厚尾 + 波动率聚集（自相关在平方上）</td><td>Heston/Merton 自带厚尾；离散世界用 ARMA-GARCH（Q11）</td></tr>
+              </tbody>
+            </table>
+            <p><strong>一句话串起来</strong>：Black-Scholes 假设单一常数 $\sigma$，于是模型隐含波动率应该是一条水平线；但市场报价反推出来的是"微笑/偏斜"曲面，正是市场在告诉你"我不相信 GBM 的常波动率与正态尾"。Heston/Merton/Dupire 就是分别从"波动率随机""有跳跃""波动率随状态变化"三个方向去拟合这张曲面。</p>
+
+            <div class="callout deep">
+              <div class="callout-title">🎤 面试追问演练</div>
+              <p><strong>问</strong>：既然 $E[S_t]=S_0e^{\mu t}$，为什么解里的指数漂移是 $\mu-\tfrac12\sigma^2$ 而不是 $\mu$？矛盾吗？</p>
+              <p><strong>理想回答</strong>：不矛盾。$\mu-\tfrac12\sigma^2$ 是<em>对数收益</em>的期望增长率（中位数路径）；而 $E[S_t]$ 是<em>水平</em>的期望，对数正态的均值比中位数高出 $e^{\frac12\sigma^2 t}$ 倍，正好补回那 $\tfrac12\sigma^2$，得到 $e^{\mu t}$。差距来自 Jensen 不等式（指数是凸函数）——这也是波动率拖累的另一种说法。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">✅ 复习锚点</div>
+      <p>面试高频点速记：Q1 后验更新、Q2 LLN/CLT 与 Newey-West、Q5 MLE/GMM、Q6 多重检验、Q7 协方差估计与收缩、Q8 PCA/SVD、Q10 平稳性与伪回归、Q11 ARIMA+GARCH、Q12 协整 vs 相关、Q14 GBM 与 Itô。把每题的「🔬 深度拓展」里的推导能自己在白板上重写一遍，就足以应对绝大多数数理 round。</p>
+    </div>
+  </main>
+
+  <!-- ===== 脚本固定这样写，顺序不要改 ===== -->
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

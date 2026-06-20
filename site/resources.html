@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工具 · 书单 · 资源 · Quant Research 知识库</title>
+  <meta name="description" content="量化研究开源工具、书单、数据源、研报、社区、面试备考与论文源整合，新手到求职者都能按需取用。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="resources">
+  <main class="content">
+    <h1>工具 · 书单 · 资源</h1>
+    <p class="page-lead">这一页把量化研究会用到的开源工具、书单、数据源、券商研报、社区平台、面试备考与论文源集中收好。新手不必全看：先按下面的「怎么选」提示挑一两样落地，再逐步扩展。🌟 表示经典推荐，优先看、反复用。</p>
+
+    <h2 id="tools">🧰 开源工具</h2>
+    <p>从回测、平台到 AI + Finance、研报复现和数据处理库，按用途分组。点开链接即可前往 GitHub。</p>
+
+    <div class="callout tip">
+      <div class="callout-title">✅ 怎么选</div>
+      <p>新手别一上来堆框架：A 股入门可先用<strong>聚宽 + Tushare/AKShare</strong> 拿数据跑通研究闭环；想要本地全流程再上 <strong>Qlib</strong>；需要事件驱动 + 实盘再看 <strong>Backtrader / vnpy</strong>。工具是为研究服务的，不要被工具清单牵着走。</p>
+    </div>
+
+    <h3>回测框架</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/mementum/backtrader">
+        <div class="card-emoji">🔁</div>
+        <div class="card-title">🌟 Backtrader</div>
+        <div class="card-desc">事件驱动回测框架，功能全面，支持实盘</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/nautechsystems/nautilus_trader">
+        <div class="card-emoji">⚡</div>
+        <div class="card-title">🌟 NautilusTrader</div>
+        <div class="card-desc">高性能事件驱动回测与实盘框架，Rust 内核 + Python API</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/polakowo/vectorbt">
+        <div class="card-emoji">🧮</div>
+        <div class="card-title">VectorBT</div>
+        <div class="card-desc">向量化回测引擎，NumPy/Numba 加速，适合大规模参数扫描</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/stefan-jansen/zipline-reloaded">
+        <div class="card-emoji">🛰️</div>
+        <div class="card-title">Zipline Reloaded</div>
+        <div class="card-desc">Quantopian 经典引擎的社区维护版</div>
+      </a>
+    </div>
+
+    <h3>量化平台</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/vnpy/vnpy">
+        <div class="card-emoji">🏛️</div>
+        <div class="card-title">🌟 vnpy</div>
+        <div class="card-desc">国内最流行的量化框架，股票/期货/期权/加密货币实盘</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/microsoft/qlib">
+        <div class="card-emoji">🤖</div>
+        <div class="card-title">Qlib</div>
+        <div class="card-desc">微软 AI 量化平台，数据→模型→回测→分析全流程</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/hummingbot/hummingbot">
+        <div class="card-emoji">🐦</div>
+        <div class="card-title">Hummingbot</div>
+        <div class="card-desc">开源做市与套利机器人，CEX + DEX 全覆盖</div>
+      </a>
+    </div>
+
+    <h3>AI + Finance</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/microsoft/RD-Agent">
+        <div class="card-emoji">🧪</div>
+        <div class="card-title">RD-Agent</div>
+        <div class="card-desc">微软亚研院自动化研发 Agent，读论文→做因子→跑实验，集成 Qlib</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/AI4Finance-Foundation/FinRL">
+        <div class="card-emoji">🎮</div>
+        <div class="card-title">FinRL</div>
+        <div class="card-desc">金融强化学习框架</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/AI4Finance-Foundation/FinGPT">
+        <div class="card-emoji">💬</div>
+        <div class="card-title">FinGPT</div>
+        <div class="card-desc">开源金融 LLM，LoRA 微调，情感分析/研报解读</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/AI4Finance-Foundation/FinRobot">
+        <div class="card-emoji">🦾</div>
+        <div class="card-title">FinRobot</div>
+        <div class="card-desc">基于 LLM 的多 Agent 金融分析平台</div>
+      </a>
+    </div>
+
+    <h3>研报复现</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/hugo2046/QuantsPlaybook">
+        <div class="card-emoji">📑</div>
+        <div class="card-title">QuantsPlaybook</div>
+        <div class="card-desc">券商金工研报复现合集（华泰/光大/招商/国信），100+ 策略</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/industry-report/huatai-finengi-report">
+        <div class="card-emoji">📈</div>
+        <div class="card-title">huatai-finengi-report</div>
+        <div class="card-desc">华泰金工研报集合：CNN 选股、时序交叉验证、ML 多因子</div>
+      </a>
+    </div>
+
+    <h3>金融工程、优化与数据处理库</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/lballabio/QuantLib">
+        <div class="card-emoji">🏗️</div>
+        <div class="card-title">🌟 QuantLib</div>
+        <div class="card-desc">工业级衍生品定价库，C++ 内核 + Python 绑定</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/cvxpy/cvxpy">
+        <div class="card-emoji">📐</div>
+        <div class="card-title">cvxpy</div>
+        <div class="card-desc">Python 凸优化，组合优化/风险预算</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/pola-rs/polars">
+        <div class="card-emoji">🐻‍❄️</div>
+        <div class="card-title">Polars</div>
+        <div class="card-desc">比 pandas 快 10-50x 的数据处理库</div>
+      </a>
+    </div>
+
+    <h3>资源合集</h3>
+    <div class="card-grid">
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/wilsonfreitas/awesome-quant">
+        <div class="card-emoji">🗂️</div>
+        <div class="card-title">🌟 awesome-quant</div>
+        <div class="card-desc">量化金融资源大全：库、框架、数据源、书籍</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/LLMQuant/quant-wiki">
+        <div class="card-emoji">📖</div>
+        <div class="card-title">🌟 quant-wiki</div>
+        <div class="card-desc">量化知识开源与汉化，打破国内外量化金融行业信息差</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/georgezouq/awesome-ai-in-finance">
+        <div class="card-emoji">🧠</div>
+        <div class="card-title">awesome-ai-in-finance</div>
+        <div class="card-desc">AI + 金融：LLM、深度学习策略、RL 交易</div>
+      </a>
+      <a class="card" target="_blank" rel="noopener" href="https://github.com/wangzhe3224/awesome-systematic-trading">
+        <div class="card-emoji">🔧</div>
+        <div class="card-title">awesome-systematic-trading</div>
+        <div class="card-desc">系统化交易资源，覆盖期货/期权/外汇/加密</div>
+      </a>
+    </div>
+
+    <h2 id="books">📚 书单</h2>
+    <p>按用途分组，🌟 为优先推荐。很多经典都有免费 PDF，面试前先把核心章节刷透，比泛读十本更有用。</p>
+
+    <h3>面试</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 《A Practical Guide to Quantitative Finance Interviews》(Xinfeng Zhou)</td><td><strong>绿皮书</strong>，量化面试高频参考书；B 站可看 <a target="_blank" rel="noopener" href="https://space.bilibili.com/37671712">@数学的风</a> 讲解，脑筋急转弯可看 <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1nD4y1K7cu/">这部分</a></td></tr>
+        <tr><td>《Heard on the Street》(Timothy Crack)</td><td>华尔街经典面试题集，偏概率和智力题</td></tr>
+        <tr><td>《Quant Job Interview Questions and Answers》(Mark Joshi)</td><td>偏衍生品定价方向，适合期权岗</td></tr>
+      </tbody>
+    </table>
+
+    <h3>数学与统计</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 《Introduction to Probability》(Blitzstein & Hwang)</td><td>Harvard 概率论教材，有免费 PDF，例题极好，面试前刷完前 6 章</td></tr>
+        <tr><td>《Probability and Statistics for Engineering and the Sciences》(Devore)</td><td>概率统计标准教材，覆盖面广</td></tr>
+        <tr><td>《All of Statistics》(Wasserman)</td><td>统计学速成，写给 CS 背景的人看的，紧凑高效</td></tr>
+        <tr><td>🌟 《Analysis of Financial Time Series》(Tsay)</td><td>金融时间序列的权威教材，ARMA/GARCH/协整全覆盖</td></tr>
+        <tr><td>🌟 《Stochastic Calculus for Finance I & II》(Shreve)</td><td>随机微积分的金标准，I 是离散，II 是连续，推导 Black-Scholes 的必经之路</td></tr>
+        <tr><td>《Convex Optimization》(Boyd & Vandenberghe)</td><td>凸优化经典，有免费 PDF，组合优化和风控都离不开</td></tr>
+      </tbody>
+    </table>
+
+    <h3>编程</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>《Python for Data Analysis》(McKinney)</td><td>pandas 作者亲著，数据清洗的工具书</td></tr>
+        <tr><td>《Effective Modern C++》(Meyers)</td><td>现代 C++ 最佳实践，Quant Research 可作为工程背景阅读，非本仓库主线</td></tr>
+        <tr><td>《Python for Finance》(Hilpisch)</td><td>从零到量化系统的 Python 实战</td></tr>
+        <tr><td>《Introduction to Linear Algebra》(Strang)</td><td>配合 MIT 18.06 公开课食用，PCA/因子模型的数学基础</td></tr>
+      </tbody>
+    </table>
+
+    <h3>因子与策略</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>《Quantitative Equity Portfolio Management》(Chincarini & Kim)</td><td>量化股票组合从因子到实盘的全流程</td></tr>
+        <tr><td>🌟 《Advances in Financial Machine Learning》(de Prado)</td><td>金融 ML 实战经典，数据结构化/防过拟合/回测方法论，引用很广</td></tr>
+        <tr><td>🌟 《Active Portfolio Management》(Grinold & Kahn)</td><td>主动管理的理论框架，信息比率、alpha 转移，适合基金公司研究员重点阅读</td></tr>
+        <tr><td>《Options, Futures, and Other Derivatives》(Hull)</td><td>衍生品入门标准教材，覆盖期货/互换/期权，适合建立全局观</td></tr>
+        <tr><td>《Option Volatility and Pricing》(Natenberg)</td><td>期权交易实战视角，Greeks 直觉讲得很好</td></tr>
+      </tbody>
+    </table>
+
+    <h3>机器学习</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 《The Elements of Statistical Learning》(Hastie et al.)</td><td>统计学习理论经典，有免费 PDF，树模型/正则化/集成学习讲得很系统</td></tr>
+        <tr><td>《Deep Learning》(Goodfellow et al.)</td><td>"花书"，深度学习理论基础，CNN/RNN/GAN/优化全覆盖</td></tr>
+        <tr><td>《Machine Learning for Asset Managers》(de Prado)</td><td>资管视角的 ML，聚类/特征重要性/组合构建，薄但密度极高</td></tr>
+      </tbody>
+    </table>
+
+    <h3>中文</h3>
+    <table>
+      <thead><tr><th>书名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 石川 等.《因子投资：方法与实践》</td><td>中文因子投资经典，从因子定义到组合构建和陷阱规避，系统性较强</td></tr>
+        <tr><td>丁鹏.《量化投资：策略与技术》</td><td>国内量化入门经典，适合建立全局认知</td></tr>
+        <tr><td>杨博理 等.《量化投资：以Python为工具》</td><td>Python 量化实操入门，有代码可跑</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="bloggers">✍️ 博主与公众号</h2>
+    <p>持续更新的中文量化内容源，做因子方向尤其值得关注。</p>
+    <ul>
+      <li>🌟 <strong>石川 / 川总写量化</strong> — <a target="_blank" rel="noopener" href="https://www.zhihu.com/people/mitcshi">知乎</a> / 公众号。因子投资内容系统，文章通常有学术论文支撑，也比较适合非科班读者。做因子方向建议关注。</li>
+      <li>🌟 <strong>因子动物园 (Factor Zoo)</strong> — 公众号。石川团队出品，系统梳理学术因子文献，追踪前沿论文，适合做因子方向时集中查阅。</li>
+      <li>🌟 <strong>量化投资与机器学习 (QIML)</strong> — 公众号。国内较活跃的量化公众号之一，覆盖 ML 策略、因子研究、行业招聘动态，信息密度高。</li>
+      <li><strong>交易门</strong> — 播客/公众号。对话国内外交易员和量化基金经理，听行业里的人怎么想问题。</li>
+      <li><strong>数量经济学</strong> — 知乎/公众号。偏学术向，计量经济学与金融实证方法，适合想打扎实理论基础的人。</li>
+    </ul>
+
+    <h2 id="communities">🌐 社区与平台</h2>
+    <p>投研平台和问答社区。入门优先选有免费数据 + 回测引擎的平台，先把研究闭环跑起来。</p>
+    <div class="callout tip">
+      <div class="callout-title">✅ 怎么选</div>
+      <p>没有数据和环境就想做策略很容易卡住。<strong>新手建议从聚宽起步</strong>：免费数据 + 在线回测 + 社区策略，零配置就能验证想法；做数字货币可看发明者 FMZ；需要更高质量数据再考虑米筐/优矿。</p>
+    </div>
+    <ul>
+      <li>🌟 <a target="_blank" rel="noopener" href="https://www.joinquant.com">聚宽 JoinQuant</a> — 国内常用量化投研平台，免费数据、回测引擎、社区策略分享，适合入门。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.fmz.com">发明者量化 FMZ</a> — 数字货币/期货量化，支持多语言策略，社区活跃。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.ricequant.com">米筐 RiceQuant</a> — 专业量化研究平台，数据质量高，机构用户多。</li>
+      <li><a target="_blank" rel="noopener" href="https://uqer.datayes.com">优矿 Uqer</a> — 通联数据旗下，数据全面，API 友好。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.quantconnect.com">QuantConnect</a> — 国际量化平台，Lean 引擎开源，支持多资产多市场。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.zhihu.com/topic/19815465">知乎：量化交易</a> — 高质量问答和专栏，搜具体问题经常能找到好答案。</li>
+      <li><a target="_blank" rel="noopener" href="https://bbs.pinggu.org">经管之家</a> — 老牌经济金融学术论坛，有不少历史沉淀的好帖。</li>
+    </ul>
+
+    <h2 id="data">📊 A 股数据源</h2>
+    <p>从免费开源到机构级付费，按需选用。</p>
+    <div class="callout tip">
+      <div class="callout-title">✅ 怎么选</div>
+      <p>个人研究优先用 <strong>Tushare Pro + AKShare</strong>（免费、覆盖广、Python 友好），需要分钟级 K 线和财报再补 BaoStock；机构级的 Wind / Choice 数据更全但付费，学生通常用学校账号。</p>
+    </div>
+    <table>
+      <thead><tr><th>数据源</th><th>类型</th><th>链接</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 Tushare Pro</td><td>免费，股票/基金/期货/可转债</td><td><a target="_blank" rel="noopener" href="https://tushare.pro">tushare.pro</a></td></tr>
+        <tr><td>🌟 AKShare</td><td>开源免费</td><td><a target="_blank" rel="noopener" href="https://github.com/akfamily/akshare">akfamily/akshare</a></td></tr>
+        <tr><td>BaoStock</td><td>免费，日K/分钟K/财报</td><td><a target="_blank" rel="noopener" href="http://baostock.com">baostock.com</a></td></tr>
+        <tr><td>Wind 万得</td><td>机构级，覆盖全面（付费）</td><td><a target="_blank" rel="noopener" href="https://www.wind.com.cn">wind.com.cn</a></td></tr>
+        <tr><td>东方财富 Choice</td><td>机构级（付费）</td><td><a target="_blank" rel="noopener" href="https://choice.eastmoney.com">choice.eastmoney.com</a></td></tr>
+        <tr><td>efinance</td><td>开源爬虫</td><td><a target="_blank" rel="noopener" href="https://github.com/mpquant/efinance">mpquant/efinance</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="reports">🏦 券商金工研报</h2>
+    <p>国内卖方金工团队是因子和选股方法论的重要来源，配合上面的研报复现仓库一起看效果最好。</p>
+    <table>
+      <thead><tr><th>团队</th><th>研究方向</th></tr></thead>
+      <tbody>
+        <tr><td>🌟 华泰金工</td><td>「人工智能选股」系列、因子体系</td></tr>
+        <tr><td>🌟 光大金工</td><td>因子择时、事件驱动</td></tr>
+        <tr><td>天风金工</td><td>基本面因子、另类数据</td></tr>
+        <tr><td>中金量化</td><td>宏观量化、资产配置</td></tr>
+        <tr><td>招商金工</td><td>多因子模型、行业轮动</td></tr>
+        <tr><td>开源证券金工</td><td>覆盖面广</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="practice">🎯 面试备考与竞赛</h2>
+    <p>刷题和竞赛是检验实力、积累项目素材的好方式。</p>
+
+    <h3>面试备考</h3>
+    <ul>
+      <li>🌟 <a target="_blank" rel="noopener" href="https://www.quantguide.io">QuantGuide.io</a> — 量化版 LeetCode；英文吃力可先用力扣中文搜同类题。</li>
+      <li><a target="_blank" rel="noopener" href="https://brainstellar.com">Brainstellar</a> — 量化面试脑筋急转弯；优先刷绿皮书。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.janestreet.com/puzzles/">Jane Street Puzzles</a> — 简街（Jane Street）月度谜题，高于面试难度。</li>
+    </ul>
+
+    <h3>竞赛</h3>
+    <ul>
+      <li><a target="_blank" rel="noopener" href="https://www.kaggle.com/competitions/jane-street-real-time-market-data-forecasting">Jane Street Kaggle</a> — $100K 奖金，真实市场数据。</li>
+      <li><a target="_blank" rel="noopener" href="https://www.worldquantbrain.com">WorldQuant BRAIN</a> — 10 万+ 用户，为 alpha 信号付费。</li>
+    </ul>
+
+    <h2 id="papers-src">📄 学术论文源</h2>
+    <p>追踪前沿论文和工作论文的常用入口。</p>
+    <ul>
+      <li><a target="_blank" rel="noopener" href="https://www.ssrn.com">SSRN</a> — 量化金融工作论文。</li>
+      <li><a target="_blank" rel="noopener" href="https://arxiv.org/list/q-fin/recent">arXiv q-fin</a> — 金融领域最新预印本。</li>
+      <li>NBER Working Papers</li>
+      <li>Risk.net / Journal of Financial Economics / Journal of Portfolio Management</li>
+    </ul>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

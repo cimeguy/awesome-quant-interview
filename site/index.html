@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quant Research 知识库 · 量化研究面试与入门</title>
+  <meta name="description" content="基于 awesome-quant-interview 构建的量化研究知识库：55 道面试八股、数理基础、因子与 Alpha、机器学习、策略方向与论文，难点深度拓展。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="index">
+  <main class="content">
+    <section class="hero">
+      <img src="assets/logo.svg" alt="logo" />
+      <h1>Quant Research 知识库</h1>
+      <p>从零到面试的量化研究学习手册：数理基础、编程、因子与 Alpha、机器学习、策略方向与经典论文。<strong>每个难点都配直觉、推导与陷阱拓展</strong>，适合大一新生入门，也适合求职者系统复习。</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="math.html">🎲 从数理基础开始</a>
+        <a class="btn" href="project-review.html">🧭 我该先看哪块？</a>
+      </div>
+    </section>
+
+    <div class="callout note">
+      <div class="callout-title">📖 这个知识库讲什么</div>
+      <p>QR（Quant Research）的核心是在不确定环境里反复<strong>提出假设、验证信号、解释失败</strong>。内容覆盖概率统计、线性代数、时间序列、因子研究、机器学习、回测评估、组合优化、经典论文与高频问答——把零散知识组织成<strong>面试可表达、入门可上手</strong>的体系。</p>
+    </div>
+
+    <h2 id="how-to-use">🚀 怎么用这个知识库</h2>
+    <ul>
+      <li><strong>快面试了</strong>：先刷 <a href="math.html">数学与统计基础</a> 速查，再回到薄弱章节补定义、直觉和坑。</li>
+      <li><strong>有项目要复盘</strong>：直接看 <a href="project-review.html">项目复盘 8 问</a>，写清假设、数据、验证、失败和下一步。</li>
+      <li><strong>刚入门 / 业余做量化</strong>：先在 <a href="project-review.html#paths">学习路径自查</a> 里选一个最像自己的状态，不要从头硬啃。</li>
+      <li><strong>只想找资源</strong>：去 <a href="resources.html">工具 · 书单 · 资源</a> 和 <a href="strategies.html">策略方向与论文</a>。</li>
+    </ul>
+
+    <h2 id="sections">📚 八大板块</h2>
+    <div class="card-grid">
+      <a class="card" href="math.html">
+        <div class="card-emoji">🎲</div>
+        <div class="card-title">数学与统计基础</div>
+        <div class="card-desc">条件概率、CLT、MLE/GMM、协方差矩阵、SVD、平稳性、协整、随机微积分与 GBM。<strong>Q1–Q14</strong></div>
+      </a>
+      <a class="card" href="programming.html">
+        <div class="card-emoji">💻</div>
+        <div class="card-title">编程 (Python / C++)</div>
+        <div class="card-desc">数据结构、深浅拷贝、Pandas 性能、GIL 与并行、装饰器、生成器、NumPy 广播与滚动窗口、C++ 延伸。<strong>Q15–Q28</strong></div>
+      </a>
+      <a class="card" href="factor.html">
+        <div class="card-emoji">📈</div>
+        <div class="card-title">因子与 Alpha 策略</div>
+        <div class="card-desc">Alpha/Beta、Fama-French、量价因子、IC/IR、多重共线性、拥挤、组合优化、回测偏差与交易成本。<strong>Q29–Q40</strong></div>
+      </a>
+      <a class="card" href="ml.html">
+        <div class="card-emoji">🤖</div>
+        <div class="card-title">机器学习 / 深度学习</div>
+        <div class="card-desc">偏差方差、正则化、时序交叉验证、树模型、特征工程、RNN/Transformer、GAN/GNN、RL、信息泄漏、LLM。<strong>Q41–Q55</strong></div>
+      </a>
+      <a class="card" href="strategies.html">
+        <div class="card-emoji">📄</div>
+        <div class="card-title">策略方向与经典论文</div>
+        <div class="card-desc">CTA、趋势跟踪、截面选股、基本面量化、统计套利、市场中性、高频、做市、期权波动率，逐方向附奠基论文。</div>
+      </a>
+      <a class="card" href="frontier.html">
+        <div class="card-emoji">🔬</div>
+        <div class="card-title">研究前沿</div>
+        <div class="card-desc">时序预测、机器学习与资产定价、深度学习量价建模、因子工厂与 Alpha 挖掘。</div>
+      </a>
+      <a class="card" href="resources.html">
+        <div class="card-emoji">📚</div>
+        <div class="card-title">工具 · 书单 · 资源</div>
+        <div class="card-desc">回测框架、量化平台、AI+Finance、书单、博主、数据源、券商研报、刷题网站与竞赛。</div>
+      </a>
+      <a class="card" href="project-review.html">
+        <div class="card-emoji">🧭</div>
+        <div class="card-title">学习路径 & 项目复盘</div>
+        <div class="card-desc">A/B/C/D 状态自查、项目复盘 8 问、面试追问的 5 个层次、国内量化面试现实情况。</div>
+      </a>
+    </div>
+
+    <h2 id="cheatsheet">🔥 数理基础速查</h2>
+    <p>面试前最该确认能讲清楚的高频题（点进去看完整答案 + 深度拓展）：</p>
+    <ul>
+      <li><strong>概率统计</strong>：<a href="math.html#q1">Q1 条件概率与贝叶斯</a>、<a href="math.html#q2">Q2 大数定律与 CLT</a>、<a href="math.html#q5">Q5 MLE/GMM</a>、<a href="math.html#q6">Q6 p 值</a>、<a href="math.html#q7">Q7 协方差矩阵</a>。</li>
+      <li><strong>线性代数 / 时间序列</strong>：<a href="math.html#q8">Q8 EVD/SVD</a>、<a href="math.html#q10">Q10 平稳性</a>、<a href="math.html#q11">Q11 ARIMA/GARCH</a>、<a href="math.html#q12">Q12 协整</a>、<a href="math.html#q14">Q14 GBM</a>。</li>
+      <li><strong>Python / 数值计算</strong>：<a href="programming.html#q17">Q17 Pandas 性能</a>、<a href="programming.html#q18">Q18 GIL 与并行</a>、<a href="programming.html#q19">Q19 SettingWithCopy</a>、<a href="programming.html#q27">Q27 NumPy 广播</a>、<a href="programming.html#q28">Q28 滚动窗口</a>。</li>
+      <li><strong>因子与 Alpha</strong>：<a href="factor.html#q29">Q29 Alpha/Beta</a>、<a href="factor.html#q31">Q31 量价因子</a>、<a href="factor.html#q32">Q32 IC/IR</a>、<a href="factor.html#q33">Q33 多重共线性</a>、<a href="factor.html#q37">Q37 回测偏差</a>、<a href="factor.html#q39">Q39 过拟合</a>。</li>
+      <li><strong>量化 ML</strong>：<a href="ml.html#q41">Q41 偏差-方差</a>、<a href="ml.html#q43">Q43 时序交叉验证</a>、<a href="ml.html#q45">Q45 特征工程</a>、<a href="ml.html#q52">Q52 信息泄漏</a>、<a href="ml.html#q55">Q55 LLM 在量化中的应用</a>。</li>
+    </ul>
+
+    <div class="callout">
+      <div class="callout-title">💡 学习建议</div>
+      <p>量化是需要持续学习的领域：市场在变，Alpha 在衰减。八股文是入门的钥匙，长期护城河来自对市场的理解、严谨的研究方法论，以及不断迭代的能力。</p>
+    </div>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

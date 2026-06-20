@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>机器学习 / 深度学习 · Quant Research 知识库</title>
+  <meta name="description" content="机器学习与深度学习在量化研究中的应用：偏差-方差、正则化、时序交叉验证、树模型、深度学习、强化学习、信息泄漏等面试八股与深度拓展。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="ml">
+  <main class="content">
+    <h1>机器学习 / 深度学习在量化中的应用</h1>
+    <p class="page-lead">这一页覆盖量化研究面试里关于机器学习与深度学习的核心八股（Q41–Q55）：从偏差-方差、正则化、时序交叉验证，到 LSTM/Transformer、AutoEncoder、GAN、GNN、强化学习，再到标签不平衡、信息泄漏、LLM 落地等实战问题。每道难题都配了 🔬 深度拓展（含完整推导、几何直觉与面试追问演练），既适合大一新生打基础，也适合求职者临阵磨枪。</p>
+
+    <div class="callout note">
+      <div class="callout-title">📌 一条贯穿全页的主线</div>
+      <p>金融数据<strong>信噪比极低</strong>（信号微弱、噪声巨大）。这一句话几乎是本页所有问题的"题眼"：它解释了为什么我们偏好低方差模型、为什么正则化如此重要、为什么时序交叉验证不能泄漏、为什么集成学习的价值在降方差而非提精度。面试时把任何 ML 技巧扣回这条主线，答案就有了灵魂。</p>
+    </div>
+
+    <h2 id="ml-basics">机器学习基础（Q41–Q45）</h2>
+
+    <div class="qa-card" id="q41">
+      <div class="qa-q"><span class="qa-id">Q41</span>偏差-方差权衡（Bias-Variance Tradeoff）是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>泛化误差可以分解为三部分：</p>
+        <p>$$\text{MSE} = \text{Bias}^2 + \text{Variance} + \text{Irreducible Noise}$$</p>
+        <ul>
+          <li><strong>偏差（Bias）</strong>：模型假设过于简单导致的系统性误差，对应<strong>欠拟合</strong>。</li>
+          <li><strong>方差（Variance）</strong>：模型对训练数据过度敏感导致的波动，对应<strong>过拟合</strong>。</li>
+        </ul>
+        <p><strong>在量化中的含义</strong>：</p>
+        <ul>
+          <li>高偏差模型（如简单线性回归）可能错过非线性 alpha；</li>
+          <li>高方差模型（如深度神经网络）可能拟合市场噪声；</li>
+          <li>金融数据信噪比极低，通常<strong>偏向低方差模型更安全</strong>；</li>
+          <li><strong>原则</strong>：宁可欠拟合也不要过拟合——错过一个机会的代价，远小于错误地相信一个不存在的机会。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：MSE = Bias² + Var + 噪声 的完整推导，以及金融为何偏向低方差</summary>
+          <div class="expand-body">
+            <p><strong>1. 一行行推导分解公式。</strong>设真实关系为 $y = f(x) + \varepsilon$，其中噪声 $\varepsilon$ 满足 $\mathbb{E}[\varepsilon]=0$、$\text{Var}(\varepsilon)=\sigma^2$。我们用训练集 $D$ 学到一个估计 $\hat f(x)$，关注在某个固定点 $x$ 上的期望平方误差（期望对训练集的随机性与噪声同时取）：</p>
+            <p>$$\mathbb{E}\big[(y - \hat f(x))^2\big] = \mathbb{E}\big[(f(x) + \varepsilon - \hat f(x))^2\big]$$</p>
+            <p>记 $\bar f(x) = \mathbb{E}_D[\hat f(x)]$ 为模型预测的平均值。把 $\hat f$ 围绕 $\bar f$ 拆开，并利用 $\varepsilon$ 与 $\hat f$ 独立、$\mathbb{E}[\varepsilon]=0$，所有交叉项期望为零，最终得到：</p>
+            <p>$$\mathbb{E}\big[(y-\hat f)^2\big] = \underbrace{(f - \bar f)^2}_{\text{Bias}^2} + \underbrace{\mathbb{E}[(\hat f - \bar f)^2]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{噪声}}$$</p>
+            <p><strong>直觉</strong>：Bias 是"平均射偏了多少"，Variance 是"每次射击有多分散"，噪声是"靶子本身在抖"——再完美的模型也消不掉噪声 $\sigma^2$，它是误差的<strong>下界</strong>。</p>
+            <p><strong>2. 为什么金融低信噪比下要偏向低方差？</strong> 把信噪比写成 $\text{SNR} = \text{Var}(f) / \sigma^2$。金融里 $\sigma^2$ 巨大而 $\text{Var}(f)$ 微小（典型股票日度收益预测 $R^2$ 常常只有 $0.5\%\!-\!2\%$）。这意味着：</p>
+            <ul>
+              <li>可被解释的信号 $\text{Var}(f)$ 很小，降低 Bias 能挤出的收益本来就有限；</li>
+              <li>而高方差模型会把巨大的 $\sigma^2$ 当成信号去拟合，Variance 项会爆炸。</li>
+            </ul>
+            <p>所以在 $\text{Bias}^2 + \text{Variance}$ 这个可控部分里，控制 Variance 的边际收益远高于压低 Bias。这就是"宁可欠拟合"的数学根据。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"集成 / Bagging 影响的是 Bias 还是 Variance？"<br/><strong>答：</strong>主要降 Variance（平均多个模型抹平随机波动），几乎不动 Bias。Boosting 则主要降 Bias（串行拟合残差）。</p>
+              <p><strong>问：</strong>"增大正则化强度 $\lambda$，Bias 和 Variance 怎么变？"<br/><strong>答：</strong>$\lambda \uparrow$ 把模型往简单方向拉，Variance $\downarrow$、Bias $\uparrow$，存在一个最优 $\lambda$ 使总误差最小；金融里通常会把这个最优点<strong>主动往大 $\lambda$ 一侧偏</strong>。</p>
+              <p><strong>问：</strong>"噪声项能通过更多数据消掉吗？"<br/><strong>答：</strong>不能。$\sigma^2$ 是不可约误差；更多数据降的是 Variance，不是噪声。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q42">
+      <div class="qa-q"><span class="qa-id">Q42</span>正则化（L1/L2/ElasticNet）的区别和量化应用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>正则化</th><th>惩罚项</th><th>效果</th><th>量化场景</th></tr></thead>
+          <tbody>
+            <tr><td>L1（Lasso）</td><td>$\lambda \sum |w_i|$</td><td>产生稀疏解，自动选择因子</td><td>从大量候选因子中筛选有效因子</td></tr>
+            <tr><td>L2（Ridge）</td><td>$\lambda \sum w_i^2$</td><td>缩小权重但不为零</td><td>因子共线性处理，稳定回归</td></tr>
+            <tr><td>Elastic Net</td><td>$\alpha\,L1 + (1-\alpha)\,L2$</td><td>兼具稀疏和稳定</td><td>高维因子选择的默认选择</td></tr>
+          </tbody>
+        </table>
+        <p><strong>直觉</strong>：L1 像用刀切（有的因子直接砍到 0），L2 像用手压（所有因子都缩小但保留）。</p>
+        <p><strong>量化中的额外考虑</strong>：正则化强度 $\lambda$ 的选择不应只看交叉验证误差，还要考虑因子的经济学可解释性——如果 L1 选出了无法解释的因子，可能只是拟合了噪声。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：L1 稀疏的几何直觉（菱形顶点）、L1 vs L2 解的差异、ElasticNet 为何存在</summary>
+          <div class="expand-body">
+            <p><strong>1. 为什么 L1 产生稀疏解——菱形约束的顶点。</strong> 带约束的视角：最小化损失 $\text{RSS}(w)$ 等价于在约束 $\sum|w_i|\le t$（L1）或 $\sum w_i^2 \le t$（L2）下最小化 RSS。RSS 的等高线是椭圆，从最优点向外扩张，第一次碰到约束区域的点就是解。</p>
+            <ul>
+              <li><strong>L1 的约束区域是菱形（高维下是带尖角的多面体）</strong>，尖角正好落在坐标轴上（即某些 $w_i=0$）。椭圆等高线很容易先碰到尖角 → 解是稀疏的。</li>
+              <li><strong>L2 的约束区域是圆球，处处光滑无尖角</strong>，椭圆碰到的接触点几乎不会落在坐标轴上 → 权重被压小但极少恰好为 0。</li>
+            </ul>
+            <pre><code>      w2                         w2
+       |   L1(菱形)               |   L2(圆)
+       |   /\                     |   .-~-.
+   ----+--/--\----- w1       ----+-(  o  )---- w1   o=椭圆中心(OLS解)
+       | \  /  尖角落在轴上       |   `-_-'
+       |  \/  -&gt; w1=0(稀疏)       |   接触点在内部(不稀疏)</code></pre>
+            <p><strong>2. 软阈值：L1 解的解析形式。</strong> 在正交设计下，Lasso 对每个系数做<strong>软阈值（soft-thresholding）</strong>：</p>
+            <p>$$\hat w_j^{\text{L1}} = \text{sign}(\hat w_j^{\text{OLS}})\cdot \max\big(|\hat w_j^{\text{OLS}}| - \lambda,\ 0\big)$$</p>
+            <p>小于 $\lambda$ 的系数被直接置 0（这就是稀疏的来源）；而 Ridge 是<strong>等比例收缩</strong> $\hat w_j^{\text{L2}} = \hat w_j^{\text{OLS}} / (1+\lambda)$，永远不为 0。</p>
+            <p><strong>3. ElasticNet 为什么存在？</strong> 纯 L1 有两个毛病：(a) 当一组因子高度相关时，Lasso 会<strong>随机只留一个、砍掉其余</strong>，结果不稳定（换个样本就换一个因子）；(b) 当因子数 $p$ 大于样本数 $n$ 时，Lasso 最多只能选出 $n$ 个。ElasticNet 的 L2 部分把相关因子的权重"绑在一起"一起进出（grouping effect），既保留稀疏性又稳定。这正是高维量化因子库的默认配置。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"L1 的损失在 0 点不可导，怎么优化？"<br/><strong>答：</strong>用次梯度 / 坐标下降 / 近端梯度（proximal，对应上面的软阈值算子），不能直接用普通梯度下降。</p>
+              <p><strong>问：</strong>"两个几乎一样的因子，L1 和 L2 分别怎么处理？"<br/><strong>答：</strong>L1 随机留一个（不稳定）；L2 把权重平摊给两者；ElasticNet 让它们成组同进同出。</p>
+              <p><strong>问：</strong>"$\lambda$ 怎么选？金融里有什么额外讲究？"<br/><strong>答：</strong>用<strong>时序交叉验证</strong>（不是普通 K-Fold）选 $\lambda$，且要叠加经济可解释性约束——选出的因子能讲出逻辑，否则疑似拟合噪声。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q43">
+      <div class="qa-q"><span class="qa-id">Q43</span>时间序列的交叉验证应该怎么做？为什么不能用普通 K-Fold？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>问题</strong>：普通 K-Fold 随机划分，破坏了时间序列的时序结构，导致<strong>未来信息泄漏</strong>到训练集。</p>
+        <p><strong>正确方法</strong>：</p>
+        <pre><code>Time →
+|---Train---|---Gap---|--Test--|                 第1轮
+|------Train-------|---Gap---|--Test--|          第2轮
+|---------Train-----------|---Gap---|--Test--|   第3轮</code></pre>
+        <ul>
+          <li><strong>Walk-Forward（前向验证）</strong>：固定或扩展窗口训练，向前滚动测试；</li>
+          <li><strong>Embargo Gap</strong>：训练集和测试集之间留缓冲期，防止特征计算中的信息泄漏；</li>
+          <li><strong>Purged K-Fold</strong>（López de Prado 提出）：在 K-Fold 基础上，清除训练集中与测试集标签在时间上重叠的样本。</li>
+        </ul>
+        <p><strong>Embargo 的计算</strong>：如果特征使用了过去 20 天的数据来预测未来 5 天的收益，Embargo 至少应设为 5 天（标签的前瞻窗口）。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：普通 K-Fold 为何泄漏、Walk-Forward 画法、Purged K-Fold + Embargo 的计算细节</summary>
+          <div class="expand-body">
+            <p><strong>1. 普通 K-Fold 到底哪里泄漏？</strong> 关键在于金融的标签是<strong>有时间跨度的</strong>：一个在 $t$ 时刻打的标签（如未来 5 日收益）会用到 $t$ 到 $t+5$ 的信息；而 $t$ 时刻的特征又可能用了 $t-20$ 到 $t$ 的历史。于是相邻样本的特征窗口与标签窗口<strong>互相重叠</strong>。普通 K-Fold 随机洗牌后，训练集里很可能混入"几乎和测试样本同一时段"的样本，模型相当于偷看了答案，CV 分数虚高、上线就崩。</p>
+            <p><strong>2. Walk-Forward 两种窗口。</strong></p>
+            <pre><code>滚动窗口(Rolling, 固定长度):
+[==Train==]      [Test]
+   [==Train==]      [Test]
+      [==Train==]      [Test]   旧数据被丢弃, 适应非平稳
+
+扩展窗口(Expanding, 只增不减):
+[==Train==]      [Test]
+[====Train====]      [Test]
+[======Train======]      [Test]  样本越来越多, 更稳</code></pre>
+            <p>金融非平稳强时偏向 Rolling（让模型"忘记"过时的市场结构）；样本稀缺时用 Expanding。</p>
+            <p><strong>3. Purged K-Fold + Embargo 的精确机制（López de Prado）。</strong></p>
+            <ul>
+              <li><strong>Purge（清洗）</strong>：对每一个测试 fold，把训练集中"标签时间区间 $[t_{i,0}, t_{i,1}]$ 与测试集任一样本的标签区间相交"的样本<strong>全部删除</strong>，斩断重叠造成的泄漏。</li>
+              <li><strong>Embargo（禁运）</strong>：即使不直接重叠，紧跟在测试集<strong>之后</strong>的训练样本仍可能因序列相关（如波动聚集）而泄漏。于是在测试集结束后再额外删掉一段长度为 $h$ 的样本。常取 $h \approx \lceil \rho \cdot T \rceil$，$\rho$ 约 $1\%$，$T$ 为总样本数；或直接取<strong>标签前瞻窗口的长度</strong>。</li>
+            </ul>
+            <pre><code>... Train Train | PURGE | === Test === | EMBARGO | Train Train ...
+                  删除与测试               删除紧随其后
+                  标签重叠的样本           的 h 个样本</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 常见错误</div>
+              <p>用 <code>sklearn</code> 默认的 <code>KFold(shuffle=True)</code> 跑金融数据 → 严重泄漏。应使用 <code>TimeSeriesSplit</code>，或自己实现 Purged K-Fold。即便用 <code>TimeSeriesSplit</code>，它也<strong>不会自动 Purge/Embargo</strong>，标签有跨度时仍需手动清洗。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"Embargo 设多长？"<br/><strong>答：</strong>至少覆盖标签的前瞻窗口；考虑序列相关时再多留几天。给出"特征 20 天 + 标签未来 5 天 → Embargo ≥ 5 天"这个例子最得分。</p>
+              <p><strong>问：</strong>"Walk-Forward 只测一段，方差大怎么办？"<br/><strong>答：</strong>多起点滚动、组合多个 OOS 段；或用 Combinatorial Purged CV（CPCV）生成多条回测路径估计分布。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q44">
+      <div class="qa-q"><span class="qa-id">Q44</span>XGBoost / LightGBM 为什么在量化比赛中这么流行？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>核心优势</strong>：</p>
+        <ol>
+          <li><strong>天然处理非线性和交互</strong>：树模型自动捕捉因子间的非线性关系和交互效应；</li>
+          <li><strong>对异常值鲁棒</strong>：基于排序分裂，不受因子分布影响；</li>
+          <li><strong>特征重要性</strong>：内置特征选择，直接看哪些因子有用；</li>
+          <li><strong>缺失值处理</strong>：原生支持缺失值；</li>
+          <li><strong>训练效率高</strong>：GPU 加速，大规模因子矩阵可快速训练。</li>
+        </ol>
+        <p><strong>量化中的关键调参</strong>：</p>
+        <ul>
+          <li><code>max_depth</code>：3–7 即可，太深容易过拟合；</li>
+          <li><code>learning_rate</code>：0.01–0.1，配合较多的 <code>n_estimators</code>；</li>
+          <li><code>subsample / colsample_bytree</code>：0.5–0.8，增加随机性；</li>
+          <li><code>min_child_weight</code>：防止拟合噪声。</li>
+        </ul>
+        <p><strong>注意</strong>：树模型在量化中的表现上限可能<strong>不如线性模型</strong>——因为金融数据信噪比极低，复杂模型更容易拟合噪声。实际中线性模型 + 好因子常常比复杂模型 + 普通因子更稳定。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为何流行、为何金融里上限可能不如线性、关键调参的物理直觉</summary>
+          <div class="expand-body">
+            <p><strong>1. GBDT 在做什么？</strong> 梯度提升把预测写成一堆树的加法模型 $F_M(x)=\sum_{m=1}^{M}\nu\, h_m(x)$，每棵新树 $h_m$ 去拟合当前损失的<strong>负梯度（伪残差）</strong>，$\nu$ 是学习率。XGBoost 进一步用二阶泰勒展开 + 显式正则项作分裂，LightGBM 用直方图 + leaf-wise 生长 + GOSS 采样把它做快。它流行的本质：<strong>对表格型、特征量纲混杂、含交互与缺失的数据，开箱即用且很难调坏</strong>——这恰是因子矩阵的常态。</p>
+            <p><strong>2. 为什么金融里上限可能不如线性？</strong> 三个理由扣回"低信噪比"：</p>
+            <ul>
+              <li><strong>树容易把噪声当信号</strong>：树能逼近任意复杂函数，自由度太高，在 $R^2$ 只有 1% 的数据上极易过拟合，OOS 衰减剧烈；</li>
+              <li><strong>金融 alpha 的真实结构常常近似线性 / 单调</strong>：因子与收益多是弱单调关系，线性模型的强先验（"就是一条线"）本身是一种正则，反而稳；</li>
+              <li><strong>外推能力差</strong>：树只能输出训练时见过的分裂区间的均值，遇到分布漂移（新的市场状态）无法外推，而线性模型能延伸。</li>
+            </ul>
+            <p><strong>3. 关键调参的直觉（都在压方差）。</strong></p>
+            <table>
+              <thead><tr><th>参数</th><th>调它等于在控制什么</th></tr></thead>
+              <tbody>
+                <tr><td><code>max_depth</code> / <code>num_leaves</code></td><td>单棵树能表达的交互阶数；浅树 = 强偏差弱方差，金融偏浅</td></tr>
+                <tr><td><code>learning_rate</code> × <code>n_estimators</code></td><td>小步多走 → 平滑、抗噪；二者大致成反比，配早停用</td></tr>
+                <tr><td><code>subsample</code> / <code>colsample</code></td><td>行/列采样注入随机性，降相关、降方差（类 Bagging）</td></tr>
+                <tr><td><code>min_child_weight</code> / <code>min_data_in_leaf</code></td><td>叶子最小样本/权重，太小的叶子=记住噪声，调大更稳</td></tr>
+                <tr><td><code>reg_lambda</code> / <code>reg_alpha</code></td><td>叶子权重的 L2/L1，直接惩罚复杂度</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"XGBoost 怎么处理缺失值？"<br/><strong>答：</strong>为每个分裂学一个<strong>默认方向</strong>，缺失样本统一走该方向；金融里缺失常有含义（如某因子停更），别随便填均值。</p>
+              <p><strong>问：</strong>"特征重要性能直接当因子有效性吗？"<br/><strong>答：</strong>不能。split/gain importance 对高基数特征有偏，且会因共线性"抢功劳"。更稳的是 <strong>SHAP</strong> + OOS 的 IC 验证。</p>
+              <p><strong>问：</strong>"LightGBM 比 XGBoost 快在哪？"<br/><strong>答：</strong>直方图分裂 + leaf-wise 生长 + GOSS（保留大梯度样本、对小梯度样本采样）+ EFB 特征捆绑。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q45">
+      <div class="qa-q"><span class="qa-id">Q45</span>特征工程在量化 ML 中有哪些关键技巧？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>技巧</th><th>描述</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td><strong>截面排序 / z-score</strong></td><td>每个截面时间点标准化</td><td>消除时间趋势，保留截面排序信息</td></tr>
+            <tr><td><strong>滞后特征</strong></td><td><code>feature_lag1</code>, <code>feature_lag5</code></td><td>捕捉因子动量或反转</td></tr>
+            <tr><td><strong>滚动统计量</strong></td><td>均值、标准差、偏度、峰度</td><td>捕捉分布特征的时变性</td></tr>
+            <tr><td><strong>交互特征</strong></td><td>因子A × 因子B</td><td>捕捉条件效应（如"价值+动量"联合信号）</td></tr>
+            <tr><td><strong>分位数编码</strong></td><td>连续值 → 分位数桶</td><td>减少异常值影响，对树模型可提升稳定性</td></tr>
+            <tr><td><strong>目标编码的陷阱</strong></td><td>不可对测试集做全局编码</td><td>信息泄漏的常见来源</td></tr>
+          </tbody>
+        </table>
+        <p><strong>最重要的原则</strong>：每个特征必须在预测时刻（point-in-time）确实可以获得。回测中使用了未来信息的特征工程是<strong>最隐蔽的前视偏差</strong>。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：point-in-time 原则、目标编码泄漏陷阱、截面标准化 vs 时序标准化</summary>
+          <div class="expand-body">
+            <p><strong>1. point-in-time（PIT）到底防什么？</strong> 财报、分析师预期、指数成分、复权因子都会<strong>事后被修订</strong>。如果你用"今天数据库里这条记录"去回测三年前，那就用到了三年前根本拿不到的修订值——这是最隐蔽的前视偏差，因为代码完全没 bug。正确做法是建 PIT 数据库：每条记录带一个 <code>knowledge_date / 可用时间</code>，回测在 $t$ 时刻只读 <code>知道时间 ≤ t</code> 的版本。典型例子：财报"报告期"是 Q1，但"发布日"可能晚 45 天，特征必须挂在发布日而非报告期。</p>
+            <p><strong>2. 目标编码（target encoding）为什么是泄漏重灾区。</strong> 目标编码用"该类别下 $y$ 的均值"替代类别。如果用<strong>全样本</strong>算这个均值，每个样本的特征里就掺进了自己标签的信息（自己泄漏给自己），CV 虚高、上线归零。正确做法：</p>
+            <ul>
+              <li>只用<strong>训练集</strong>算编码，对测试集 transform（fit 在训练、transform 在测试）；</li>
+              <li>训练集内部用 <strong>out-of-fold</strong> 编码（K 折，每折用其余折算均值），避免折内自泄漏；</li>
+              <li>金融时序里更要保证编码只用<strong>过去</strong>的标签（expanding mean），不能用未来。</li>
+            </ul>
+            <p><strong>3. 截面标准化 vs 时序标准化——别用错。</strong></p>
+            <table>
+              <thead><tr><th></th><th>截面（cross-sectional）</th><th>时序（time-series）</th></tr></thead>
+              <tbody>
+                <tr><td>沿哪个维度归一</td><td>同一时刻、所有股票之间</td><td>同一只股票、沿时间</td></tr>
+                <tr><td>消除什么</td><td>市场整体的时间趋势 / beta</td><td>该资产自身的量纲与漂移</td></tr>
+                <tr><td>有无泄漏风险</td><td>无（只用当期截面）✅</td><td>有！必须用<strong>滚动窗口</strong>，禁用全样本均值方差 ⚠️</td></tr>
+                <tr><td>典型用途</td><td>多因子选股打分（排序）</td><td>单资产时序预测、波动归一</td></tr>
+              </tbody>
+            </table>
+            <p>选股里几乎都用<strong>截面标准化</strong>（因为我们要的是同一时刻股票间的相对强弱，且天然无泄漏）；时序标准化一旦用了未来均值/方差就泄漏，必须改成 rolling z-score。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"截面标准化前要不要去极值？"<br/><strong>答：</strong>要。先 winsorize / MAD 截尾再标准化，否则一个异常值会把整个截面的均值方差带偏。</p>
+              <p><strong>问：</strong>"滚动窗口 z-score 的窗口怎么定？"<br/><strong>答：</strong>权衡——窗口短适应快但噪声大，窗口长平稳但滞后；常用 60/120/252 日并做稳健性检验。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="deep-learning">深度学习（Q46–Q49）</h2>
+
+    <div class="qa-card" id="q46">
+      <div class="qa-q"><span class="qa-id">Q46</span>RNN / LSTM / Transformer 在量化时间序列预测中各自的优劣？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>模型</th><th>优势</th><th>劣势</th><th>量化适用</th></tr></thead>
+          <tbody>
+            <tr><td><strong>RNN</strong></td><td>简单、参数少</td><td>梯度消失、长程依赖弱</td><td>基本淘汰</td></tr>
+            <tr><td><strong>LSTM</strong></td><td>门控机制解决长程依赖</td><td>串行计算慢，超参敏感</td><td>中频时序预测</td></tr>
+            <tr><td><strong>GRU</strong></td><td>比 LSTM 简化、参数更少</td><td>能力略弱于 LSTM</td><td>LSTM 的轻量替代</td></tr>
+            <tr><td><strong>Transformer</strong></td><td>并行计算、全局注意力</td><td>对位置敏感，数据需求大</td><td>多因子截面学习，注意力权重可解释</td></tr>
+            <tr><td><strong>Temporal Fusion Transformer</strong></td><td>专为时序设计，内置变量选择</td><td>复杂度高</td><td>多变量时序 + 可解释性需求</td></tr>
+          </tbody>
+        </table>
+        <p><strong>实践建议</strong>：不要迷信模型复杂度。在低信噪比的金融数据中，简单 LSTM 配合好的特征工程和正则化，常常优于 Transformer。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：梯度消失的数学、LSTM 门控机制、注意力为何能并行、低信噪比下的克制</summary>
+          <div class="expand-body">
+            <p><strong>1. 梯度消失/爆炸为什么发生？</strong> 朴素 RNN 的隐状态 $h_t = \tanh(W h_{t-1} + U x_t)$。反向传播经过 $T$ 步时，梯度里会出现连乘 $\prod_{k} W^\top \,\text{diag}\big(\tanh'(\cdot)\big)$。这个连乘的量级大致由 $W$ 的谱半径（最大特征值）$\lambda$ 决定：$\lambda \lt 1$ 则梯度 $\sim \lambda^T \to 0$（<strong>消失</strong>，学不到长程依赖），$\lambda \gt 1$ 则 $\to \infty$（<strong>爆炸</strong>）。这是 RNN 学不会长记忆的根因。</p>
+            <p><strong>2. LSTM 门控如何破解。</strong> LSTM 引入一条<strong>细胞状态</strong> $C_t$，更新是<strong>加法</strong>而非反复矩阵相乘：</p>
+            <p>$$C_t = f_t \odot C_{t-1} + i_t \odot \tilde C_t$$</p>
+            <p>其中遗忘门 $f_t=\sigma(\cdot)$、输入门 $i_t=\sigma(\cdot)$、输出门 $o_t=\sigma(\cdot)$。梯度沿 $C_t$ 回传时主要乘以 $f_t$（接近 1 时形成"常数误差传送带"），避免了连乘塌缩——这就是它能记住长程依赖的关键。GRU 把三门并成两门（更新门 + 重置门），参数更少、训练更快。</p>
+            <p><strong>3. 注意力为什么能并行，RNN 为什么不能。</strong> RNN 的 $h_t$ 依赖 $h_{t-1}$，<strong>必须按时间步串行</strong>。自注意力直接对所有位置算两两关系：</p>
+            <p>$$\text{Attn}(Q,K,V)=\text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$$</p>
+            <p>所有位置的 $Q,K,V$ 可一次性矩阵乘出来，<strong>没有时间方向的依赖链</strong>，所以能在 GPU 上完全并行；代价是复杂度 $O(T^2)$ 且本身不含顺序信息，必须额外加位置编码。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 低信噪比下的克制</div>
+              <p>Transformer 数据需求大、参数多，在 $R^2 \approx 1\%$ 的金融数据上极易过拟合。经验上：先把特征工程、标签设计、正则化做扎实，再考虑复杂模型；很多时候<strong>简单 LSTM / 甚至线性模型 + 好因子</strong>就打败了堆叠 Transformer。别用模型复杂度掩盖信号本身的稀薄。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"残差连接、LayerNorm 为什么对深层 Transformer 重要？"<br/><strong>答：</strong>残差给梯度一条恒等捷径缓解消失；LayerNorm 稳定每层分布、加速收敛。</p>
+              <p><strong>问：</strong>"金融里位置编码用哪种？"<br/><strong>答：</strong>正弦或可学习位置编码都行；时序更关心相对位置，相对位置编码 / 旋转位置编码（RoPE）往往更合适。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q47">
+      <div class="qa-q"><span class="qa-id">Q47</span>AutoEncoder 和 VAE 在量化中有什么用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>AutoEncoder（AE）</strong>：</p>
+        <p>$$\text{Input} \xrightarrow{\text{Encoder}} \text{Latent} \xrightarrow{\text{Decoder}} \text{Reconstruction}$$</p>
+        <p><strong>量化应用</strong>：</p>
+        <ul>
+          <li><strong>因子降维</strong>：从上百个原始因子中提取非线性压缩表示；</li>
+          <li><strong>异常检测</strong>：重建误差大的样本可能是异常行情；</li>
+          <li><strong>缺失值填充</strong>：用训练好的 AE 重建缺失的因子值。</li>
+        </ul>
+        <p><strong>VAE（变分自编码器）</strong>：在 AE 基础上引入概率，latent space 是参数化的高斯分布：$q(z\mid x) \sim N(\mu, \sigma^2)$。</p>
+        <p><strong>额外能力</strong>：</p>
+        <ul>
+          <li>生成合成金融数据（数据增强）；</li>
+          <li>对市场状态的不确定性建模；</li>
+          <li>更平滑的 latent space 有利于下游任务。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：重建误差做异常检测的判据、VAE 的概率 latent 与 ELBO、为何能生成</summary>
+          <div class="expand-body">
+            <p><strong>1. 重建误差为何能检测异常。</strong> AE 在"正常"数据上训练，学到的是正常样本所在的低维流形。对正常样本，它能很好地压缩-重建，误差 $\lVert x - \hat x\rVert^2$ 小；遇到结构罕见的样本（如极端行情、数据异常），落在流形之外，重建误差陡增。实操判据：把训练集重建误差的分布取一个高分位（如 99%）作阈值，超过即报警；金融里常用于检测异常行情、坏数据、流动性骤变。</p>
+            <p><strong>2. VAE 的概率 latent 与 ELBO。</strong> 普通 AE 的 latent 是一个确定向量，空间可能"坑坑洼洼"（采样会解码出乱码）。VAE 让编码器输出一个分布 $q_\phi(z\mid x)=N(\mu,\sigma^2)$，并优化证据下界（ELBO）：</p>
+            <p>$$\mathcal{L} = \underbrace{\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]}_{\text{重建项}} - \underbrace{D_{\text{KL}}\big(q_\phi(z\mid x)\,\Vert\,p(z)\big)}_{\text{正则项: 向先验 }N(0,I)\text{ 靠}}$$</p>
+            <p>KL 项把 latent 拉向标准正态先验，使空间<strong>连续、平滑、可采样</strong>。训练时用<strong>重参数化技巧</strong> $z=\mu+\sigma\odot\epsilon,\ \epsilon\sim N(0,I)$，把随机性挪到 $\epsilon$ 上，从而能对 $\mu,\sigma$ 求导、反向传播。</p>
+            <p><strong>3. 为什么 VAE 能生成。</strong> 因为 latent 被约束接近 $N(0,I)$，生成时直接从先验采 $z$ 再解码即可得到合成样本——这正是 AE 做不到的（AE 的 latent 没有已知分布可采）。金融里可用于数据增强、市场状态不确定性建模；但要警惕：生成的收益序列必须验证统计特性（见 Q48），否则只是"看起来像"。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"AE 降维和 PCA 区别？"<br/><strong>答：</strong>PCA 只能线性、找方差最大方向；AE 可非线性。但金融低信噪比下 AE 不一定赢，且 PCA 可解释性更好。</p>
+              <p><strong>问：</strong>"VAE 后验坍塌（posterior collapse）是什么？"<br/><strong>答：</strong>KL 项把 $q(z\mid x)$ 压成先验导致 latent 不带信息，解码器无视 $z$。常用 KL 退火 / 自由比特缓解。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q48">
+      <div class="qa-q"><span class="qa-id">Q48</span>GAN（生成对抗网络）在量化中有哪些应用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>金融数据生成</strong>：</p>
+        <ul>
+          <li>生成合成的价格路径 / 收益率序列，用于扩充训练集；</li>
+          <li>生成极端行情场景（压力测试）；</li>
+          <li>保护隐私的数据共享。</li>
+        </ul>
+        <p><strong>常用变体</strong>：</p>
+        <ul>
+          <li><strong>TimeGAN</strong>：专门针对时间序列数据，保留时序依赖性；</li>
+          <li><strong>WGAN-GP</strong>：训练更稳定，避免模式崩塌。</li>
+        </ul>
+        <p><strong>核心挑战</strong>：</p>
+        <ul>
+          <li>评估生成质量困难——FID 等图像指标不直接适用；</li>
+          <li>必须验证生成数据的统计特性（自相关、波动率聚集、厚尾、杠杆效应）；</li>
+          <li>用生成数据训练的模型，样本外表现仍需在真实数据上验证。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：金融数据生成评估为何难——必须复刻的"风格化事实"清单</summary>
+          <div class="expand-body">
+            <p><strong>1. 为什么评估金融生成数据特别难？</strong> 图像有 FID/IS 这类感知指标，且"好看"人眼可判。金融收益序列<strong>没有现成的好/坏标尺</strong>，而且真正重要的是那些肉眼看不出的<strong>统计风格化事实（stylized facts）</strong>。一条生成序列的均值方差对了，仍可能完全错过真实市场的时序结构。必须逐项定量验证：</p>
+            <table>
+              <thead><tr><th>风格化事实</th><th>含义</th><th>怎么验证</th></tr></thead>
+              <tbody>
+                <tr><td><strong>收益近乎无自相关</strong></td><td>$\text{corr}(r_t, r_{t-k})\approx 0$（弱式有效）</td><td>画收益的 ACF，应快速落入置信带</td></tr>
+                <tr><td><strong>波动聚集</strong></td><td>大波动后跟大波动（$|r_t|$ 长记忆）</td><td>$|r_t|$ 或 $r_t^2$ 的 ACF 应缓慢衰减、长期为正</td></tr>
+                <tr><td><strong>厚尾（leptokurtic）</strong></td><td>极端收益远比正态频繁，峰度 $\gt 3$</td><td>样本峰度、QQ 图、尾部幂律指数</td></tr>
+                <tr><td><strong>杠杆效应</strong></td><td>下跌后波动上升（负收益→高波动）</td><td>$\text{corr}(r_t, \sigma_{t+k})\lt 0$ 应为负</td></tr>
+                <tr><td><strong>聚合高斯性</strong></td><td>时间尺度拉长，分布趋向正态</td><td>对比日/周/月收益的峰度递减</td></tr>
+              </tbody>
+            </table>
+            <p><strong>2. TimeGAN 为何被设计出来。</strong> 普通 GAN 只学边缘分布，常丢掉时序依赖。TimeGAN 在对抗损失外加一个<strong>监督损失</strong>（用真实序列教生成器"下一步该长什么样"）+ 一个嵌入自编码器，专门保留<strong>逐步的时序条件分布</strong>，因此能更好复刻自相关与波动聚集。</p>
+            <p><strong>3. WGAN-GP 解决什么。</strong> 原始 GAN 用 JS 散度，判别器太强时梯度消失、易<strong>模式崩塌</strong>（只生成几种样本）。WGAN 改用 Wasserstein 距离提供更平滑的梯度，GP（梯度惩罚）替代权重裁剪来满足 1-Lipschitz 约束，训练更稳。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 终极检验</div>
+              <p>合成数据再逼真也只是<strong>训练增强</strong>。用合成数据训出的策略/模型，最终<strong>必须在真实历史的样本外段</strong>验证。否则你可能只是学会了在自己造的世界里赚钱。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"怎么定量比较生成与真实分布？"<br/><strong>答：</strong>多尺度对比上表各统计量；用 train-on-synthetic-test-on-real（TSTR）下游任务表现作终极判据。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q49">
+      <div class="qa-q"><span class="qa-id">Q49</span>图神经网络（GNN）在量化中的应用场景？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>金融市场天然是图结构：股票之间通过产业链、股东关系、资金流、相关性等形成网络。</p>
+        <p><strong>应用场景</strong>：</p>
+        <ul>
+          <li><strong>关联股预测</strong>：上下游公司的信息传导（供应链图谱）；</li>
+          <li><strong>行业传导</strong>：行业龙头的涨跌对同行业/产业链的影响建模；</li>
+          <li><strong>风险传染</strong>：金融机构间的系统性风险传导；</li>
+          <li><strong>知识图谱因子</strong>：从企业关系图中提取因子（如"供应商动量"因子）。</li>
+        </ul>
+        <p><strong>常用模型</strong>：GCN、GAT（Graph Attention Network）、GraphSAGE。</p>
+        <p><strong>关键难点</strong>：图结构本身是<strong>动态变化的</strong>（公司关系、股东结构会变），需要时序图网络（Temporal GNN）或定期更新图结构。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：图从哪来、消息传递机制、动态图与关系泄漏的难点</summary>
+          <div class="expand-body">
+            <p><strong>1. 图结构的来源（边怎么定义）。</strong> GNN 第一难、也是 alpha 的真正来源，是<strong>怎么造图</strong>：</p>
+            <ul>
+              <li><strong>产业链 / 供应链</strong>：上下游买卖关系（供应商动量、客户传导）；</li>
+              <li><strong>股东 / 资本关系</strong>：共同大股东、母子公司、参股；</li>
+              <li><strong>相关性图</strong>：用收益相关系数建边（注意会随窗口变、且易泄漏）；</li>
+              <li><strong>新闻共现 / 知识图谱</strong>：同一事件被同时提及的公司连边。</li>
+            </ul>
+            <p>边的定义不同，模型学到的"传导"含义完全不同——造图本身就是特征工程。</p>
+            <p><strong>2. 消息传递（message passing）一句话机制。</strong> 每个节点反复"聚合邻居信息 + 更新自身"：</p>
+            <p>$$h_v^{(l+1)} = \sigma\!\Big(W^{(l)}\cdot \text{AGG}\big(\{h_u^{(l)} : u \in \mathcal{N}(v)\}\big)\Big)$$</p>
+            <p>GCN 用度归一化均值聚合；<strong>GAT</strong> 用注意力给不同邻居加权（自动判断哪个上下游更重要）；<strong>GraphSAGE</strong> 对邻居采样 + 聚合，能 inductive 地泛化到训练时没见过的新节点（新上市公司）。</p>
+            <p><strong>3. 动态图的难点。</strong> 真实关系随时间变（新增供应商、股东减持、相关性切换）。难点有三：</p>
+            <ul>
+              <li><strong>图随时间演化</strong>：需要 Temporal GNN（如把 GNN + RNN/注意力沿时间堆叠），或定期重建快照；</li>
+              <li><strong>关系信息的 point-in-time</strong>：用"今天才公布"的股东关系去回测过去 = 前视偏差，边也必须 PIT；</li>
+              <li><strong>相关性图的泄漏</strong>：用未来收益算相关再连边会直接泄漏，相关性必须只用历史窗口估计。</li>
+            </ul>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"GNN 层数为什么不能太深？"<br/><strong>答：</strong>过平滑（over-smoothing）——层数过多后所有节点表示趋同，区分度消失。金融图常 2–3 层够用。</p>
+              <p><strong>问：</strong>"相关性建图最大的坑？"<br/><strong>答：</strong>泄漏（用未来算相关）+ 不稳定（相关性随市场状态突变）；要滚动估计并做去噪（如随机矩阵理论 / 收缩估计）。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="rl">强化学习（Q50）</h2>
+
+    <div class="qa-card" id="q50">
+      <div class="qa-q"><span class="qa-id">Q50</span>强化学习（RL）在量化中的应用和挑战？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>应用场景</strong>：</p>
+        <ul>
+          <li><strong>最优执行</strong>：将大单拆分为小单逐步执行，最小化冲击成本（Almgren-Chriss 的 RL 版本）；</li>
+          <li><strong>动态组合管理</strong>：根据市场状态动态调整持仓，考虑交易成本；</li>
+          <li><strong>做市策略</strong>：动态调整报价价差和挂单量。</li>
+        </ul>
+        <p><strong>常用算法</strong>：</p>
+        <ul>
+          <li>PPO / A2C / SAC（连续动作空间，适合权重/价格决策）；</li>
+          <li>DQN（离散动作空间，适合买/卖/持有决策）。</li>
+        </ul>
+        <p><strong>核心挑战</strong>：</p>
+        <ol>
+          <li><strong>数据不足</strong>：金融数据的有效样本远少于游戏/机器人场景；</li>
+          <li><strong>非平稳环境</strong>：市场结构持续变化，训练好的 agent 可能快速失效；</li>
+          <li><strong>奖励设计困难</strong>：简单用 PnL 做 reward 会导致高方差；需要设计风险调整后的 reward；</li>
+          <li><strong>模拟器偏差</strong>：回测模拟器无法完美还原真实市场的冲击和流动性；</li>
+          <li><strong>可解释性差</strong>：策略决策过程不透明，难以获得风控信任。</li>
+        </ol>
+        <p><strong>实践建议</strong>：RL 在执行优化（Optimal Execution）中最为成熟，在 alpha 策略中仍处于研究阶段。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为何"最优执行"最成熟而 alpha 仍在研究、奖励设计/非平稳/模拟器偏差三难</summary>
+          <div class="expand-body">
+            <p><strong>1. 为什么最优执行是 RL 在量化里最成熟的场景？</strong> 把它对照 RL 成功的前提就懂了：</p>
+            <table>
+              <thead><tr><th>RL 成功需要</th><th>最优执行（成熟 ✅）</th><th>Alpha 策略（仍研究 ⚠️）</th></tr></thead>
+              <tbody>
+                <tr><td>奖励清晰</td><td>明确：相对 VWAP/TWAP 的执行成本，立即可测</td><td>模糊：风险调整后收益，长期、高噪声</td></tr>
+                <tr><td>环境相对平稳</td><td>分钟级微观结构在短时窗内较稳</td><td>市场结构持续漂移，信号易失效</td></tr>
+                <tr><td>样本充足</td><td>每天大量订单、tick 级数据</td><td>有效独立样本极少（年化就几十个）</td></tr>
+                <tr><td>模拟器可信</td><td>冲击模型 + LOB 可较好模拟</td><td>难以模拟自身策略对未来价格的反馈</td></tr>
+              </tbody>
+            </table>
+            <p>执行问题信噪比高、反馈快、可模拟，于是 RL 能学到东西；alpha 问题恰恰每一条都踩雷。</p>
+            <p><strong>2. 奖励设计：为何不能直接用 PnL。</strong> 用单期 PnL 当 reward 会让 agent 学成"高波动赌徒"（PnL 方差巨大、信号被噪声淹没）。常见改良：用<strong>风险调整奖励</strong>，例如差分夏普（Differential Sharpe Ratio）、或在 reward 里显式扣<strong>交易成本与回撤惩罚</strong>：</p>
+            <p>$$r_t = \Delta\text{PnL}_t - \lambda_{\text{risk}}\,\sigma_t - \lambda_{\text{cost}}\,|\Delta w_t|$$</p>
+            <p><strong>3. 非平稳：</strong> RL 默认环境是固定 MDP，而市场的转移分布在变。训练期最优的策略，部署期可能因 regime 切换而失效。缓解：滚动重训、加入市场状态特征、用更鲁棒/保守的目标。</p>
+            <p><strong>4. 模拟器偏差（sim-to-real gap）：</strong> 最阴险的是<strong>反馈缺失</strong>——历史回放假设"我的下单不影响价格"，但真实大单会推动价格、引来对手反应。模拟器越乐观，回测越虚高。执行场景靠成熟的市场冲击模型部分弥补，alpha 场景几乎无法可信模拟自身的市场影响。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"为什么不直接拿 DQN 训选股？"<br/><strong>答：</strong>样本太少 + 非平稳 + 模拟器不可信 + 奖励高方差，极易过拟合历史；不如把 RL 限定在执行这类高信噪比子问题。</p>
+              <p><strong>问：</strong>"on-policy（PPO）vs off-policy（SAC/DQN）在金融怎么选？"<br/><strong>答：</strong>金融数据贵，off-policy 样本利用率高更香；但 off-policy 在非平稳下更易被旧经验带偏，需谨慎管理 replay buffer。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="practical">实战问题（Q51–Q55）</h2>
+
+    <div class="qa-card" id="q51">
+      <div class="qa-q"><span class="qa-id">Q51</span>如何处理金融数据中标签（Label）不平衡的问题？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>场景</strong>：预测涨跌时，实际中大量微小变动（噪声），真正大涨大跌是少数。</p>
+        <p><strong>处理方法</strong>：</p>
+        <ol>
+          <li><strong>标签重定义</strong>：不用涨跌，用超额收益分位数（Top 20% vs Bottom 20%，中间丢弃）；</li>
+          <li><strong>重采样</strong>：过采样少数类（SMOTE）或欠采样多数类；</li>
+          <li><strong>损失函数加权</strong>：<code>class_weight='balanced'</code> 或 Focal Loss；</li>
+          <li><strong>评估指标</strong>：不用 Accuracy，用 AUC、Precision-Recall、IC 等。</li>
+        </ol>
+        <p><strong>量化特有考虑</strong>：金融中"不平衡"不一定是问题——中间区域的样本可能确实不包含有效信号，强行学习反而引入噪声。<strong>Triple-barrier 方法</strong>（López de Prado）通过止盈、止损、最长持有期三个条件定义标签，是更好的方案。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：Triple-barrier 三重壁垒法详解 + 样本权重</summary>
+          <div class="expand-body">
+            <p><strong>1. Triple-barrier 在解决什么。</strong> 传统"固定持有 N 天看涨跌"的标签忽略了路径：可能中途已经暴跌触发止损，却被记成"N 天后上涨"。三重壁垒法模拟真实交易的<strong>离场规则</strong>，给每个入场点画三道线，谁先被触碰就用谁定标签：</p>
+            <pre><code>价格
+ ↑   ┌──────── 上壁垒(止盈, +profit)  → 触碰记 +1
+ │   │
+ ●───┼──────────────────────┐ 垂直壁垒(最长持有 T)
+ 入场│                       │  到期未碰水平线 → 记 0(或按收益符号)
+ │   │
+ │   └──────── 下壁垒(止损, -stop)   → 触碰记 -1
+ └───────────────────────────────→ 时间</code></pre>
+            <ul>
+              <li><strong>上/下水平壁垒</strong>：止盈、止损线，常按<strong>波动率动态设定</strong>（如 $\pm k\cdot\sigma_t$），而非固定百分比——高波动期壁垒自动放宽；</li>
+              <li><strong>垂直壁垒</strong>：最长持有期 $T$，超时强制平仓，避免无限持有。</li>
+            </ul>
+            <p><strong>2. 为什么它天然缓解"不平衡"。</strong> 标签来自真实的、风险对称的离场逻辑，而不是把海量"几乎没动"的中间样本硬塞进涨/跌两类。中间噪声样本要么超时记 0、要么干脆按 meta-labeling 过滤，少数类不再是被淹没的零头。</p>
+            <p><strong>3. 配套：样本唯一性权重。</strong> 因为不同入场点的持有区间会重叠（标签共用了同一段未来收益），样本并非独立。López de Prado 提出按<strong>标签重叠度</strong>给样本降权（uniqueness weight），重叠越多权重越低，避免重复信息让模型高估自信。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"为什么慎用 SMOTE？"<br/><strong>答：</strong>SMOTE 在特征空间插值合成少数类，但金融时序有强序列相关，插值会造出不存在的、且可能泄漏的样本；优先用标签重定义 / 类权重。</p>
+              <p><strong>问：</strong>"meta-labeling 是什么？"<br/><strong>答：</strong>第一层模型决定方向，第二层模型只判断"这个信号该不该下注/下多大"，专门提升精确率、控制假阳性。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q52">
+      <div class="qa-q"><span class="qa-id">Q52</span>如何在量化 ML 中防止信息泄漏？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>常见泄漏来源</strong>：</p>
+        <ol>
+          <li><strong>特征泄漏</strong>：使用了包含未来信息的因子（如未来才发布的财报数据）；用全局统计量做标准化（应该用历史窗口内的统计量）。</li>
+          <li><strong>标签泄漏</strong>：收益率标签与特征时间窗口重叠。例：用 t-20 到 t 天的均值预测 t 到 t+5 的收益，但 t-20 到 t 已包含了部分 t+5 的信息。</li>
+          <li><strong>验证泄漏</strong>：用未来数据调参（如用整个时期做网格搜索选最优参数）；K-Fold 未保持时序。</li>
+          <li><strong>数据处理泄漏</strong>：先做全局 PCA 再划分训练/测试集；缺失值用全局均值填充。</li>
+        </ol>
+        <p><strong>防御清单</strong>：</p>
+        <ul>
+          <li>所有数据处理管道必须在<strong>训练集上 fit，在测试集上 transform</strong>；</li>
+          <li>建立 point-in-time 数据库，每条数据标注其可用时间；</li>
+          <li>用 <code>sklearn.pipeline.Pipeline</code> 封装所有预处理步骤。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：四类泄漏各一个真实例子 + Pipeline fit/transform 纪律</summary>
+          <div class="expand-body">
+            <p><strong>四类泄漏，各一个"看不出 bug 但已作弊"的例子：</strong></p>
+            <table>
+              <thead><tr><th>类型</th><th>真实例子</th><th>后果 / 修法</th></tr></thead>
+              <tbody>
+                <tr><td><strong>① 特征泄漏</strong></td><td>用财报"报告期"对齐特征，但财报实际发布晚 45 天；回测在报告期就用上了 → 提前知道业绩</td><td>按<strong>发布日</strong>对齐，建 PIT 库</td></tr>
+                <tr><td><strong>② 标签泄漏</strong></td><td>特征用 t-20→t 的均值，标签是 t→t+5 收益；CV 随机划分使训练样本与测试标签时段重叠</td><td>Purged K-Fold + Embargo（见 Q43）</td></tr>
+                <tr><td><strong>③ 验证泄漏</strong></td><td>在<strong>全历史</strong>上网格搜索选超参，再"回测"同一段；超参已偷看未来</td><td>调参只在训练段做时序 CV，OOS 段完全隔离</td></tr>
+                <tr><td><strong>④ 数据处理泄漏</strong></td><td>先对全数据集做 PCA / StandardScaler / 缺失值填均值，再切训练测试；统计量含了测试集信息</td><td>所有 fit 只在训练集</td></tr>
+              </tbody>
+            </table>
+            <p><strong>Pipeline 纪律：为什么必须 fit 在训练、transform 在测试。</strong> 任何"学了参数"的预处理（标准化的均值方差、PCA 的主成分、目标编码的类均值、缺失填充值、分箱边界……）都<strong>只能从训练集学</strong>，否则测试集信息回流到训练。手工分步极易在某一步漏掉这条纪律，所以用 <code>Pipeline</code> 把预处理 + 模型打包，让 CV 在<strong>每个 fold 内部</strong>自动重新 fit：</p>
+            <pre><code>from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.linear_model import Ridge
+
+pipe = Pipeline([
+    ("scaler", StandardScaler()),   # fit 只发生在训练 fold
+    ("pca", PCA(n_components=10)),   # 主成分也只从训练 fold 学
+    ("model", Ridge(alpha=1.0)),
+])
+# 配合时序 CV: 每个 fold 内部自动 fit_transform(训练) + transform(测试)
+# from sklearn.model_selection import TimeSeriesSplit
+# cross_val_score(pipe, X, y, cv=TimeSeriesSplit(5))</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 泄漏的信号</div>
+              <p>CV/回测分数<strong>好得不真实</strong>（夏普 5+、IC 0.3+）、且无法在最新数据上复现 —— 几乎一定有泄漏。先怀疑泄漏，再怀疑模型。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q53">
+      <div class="qa-q"><span class="qa-id">Q53</span>解释 Attention 机制在多因子选股中的应用</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>传统多因子模型对所有因子等权或固定权重组合，Attention 机制允许模型<strong>动态地</strong>、<strong>针对不同股票和不同时期</strong>为因子分配不同权重。</p>
+        <p><strong>具体做法</strong>：</p>
+        <pre><code>输入：N只股票 × K个因子 × T个时间步
+               ↓
+   时间维度 Attention：关注哪些历史时刻更重要
+               ↓
+   因子维度 Attention：关注哪些因子在当前市场环境下更有效
+               ↓
+   输出：每只股票的预测收益率 / 排序分数</code></pre>
+        <p><strong>优势</strong>：</p>
+        <ul>
+          <li>自动实现"因子择时"——在不同市场状态下侧重不同因子；</li>
+          <li>Attention 权重提供可解释性——可以看到模型关注了哪些因子；</li>
+          <li>Cross-Attention 可以捕捉股票之间的关联信息。</li>
+        </ul>
+        <p><strong>挑战</strong>：模型容易过拟合，需要较强的正则化和较大的样本量。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：时间维 vs 因子维注意力的数学、"因子择时"的本质、可解释性的边界</summary>
+          <div class="expand-body">
+            <p><strong>1. 两个维度的注意力分别在算什么。</strong> 注意力本质是"算一组归一化权重，再做加权求和"：</p>
+            <p>$$\alpha_i = \frac{\exp(e_i)}{\sum_j \exp(e_j)},\qquad \text{output} = \sum_i \alpha_i v_i$$</p>
+            <ul>
+              <li><strong>时间维注意力</strong>：对一只股票的 $T$ 个历史时刻打权重 $\alpha_t$，让模型自己决定"最近 3 天更重要还是上个月那次财报更重要"——动态的、数据驱动的滞后选择，替代手工设 lag。</li>
+              <li><strong>因子维注意力</strong>：对 $K$ 个因子打权重 $\alpha_k$，在不同市场状态下放大有效因子、抑制失效因子。</li>
+            </ul>
+            <p><strong>2. 为什么这等价于"因子择时"。</strong> 传统多因子是<strong>静态权重</strong> $\hat r = \sum_k w_k f_k$，$w_k$ 全样本固定。因子注意力让权重变成<strong>依赖当前状态</strong>的函数 $w_k = \alpha_k(\text{context})$：牛市放大动量、震荡市放大反转、危机期放大质量/低波。模型自动学会"什么时候信哪个因子"，这正是因子择时的核心诉求，只是用数据端到端地实现了它。</p>
+            <p><strong>3. 可解释性的真实边界。</strong> 注意力权重确实能可视化"模型关注了谁"，但要诚实：</p>
+            <ul>
+              <li>注意力权重<strong>不等于因果重要性</strong>——学界对"attention 是否可解释"有争议，高权重未必是真正驱动预测的变量；</li>
+              <li>权重可能不稳定，换个随机种子就变；</li>
+              <li>它是<strong>叙事辅助</strong>，不能替代严格的因子归因（如 SHAP、剔除实验）。</li>
+            </ul>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 过拟合警告</div>
+              <p>注意力参数多、表达力强，在 $R^2 \approx 1\%$ 的截面数据上极易过拟合出"看起来很合理"的择时。必须强正则 + 大样本 + 严格 OOS（Purged CV）验证，否则它学的可能只是噪声的择时。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"和直接用市场状态变量交叉因子有何区别？"<br/><strong>答：</strong>本质相通——都是让因子权重随状态变；注意力是用数据自动学权重函数，手工交叉是用先验指定。低信噪比下后者常更稳。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q54">
+      <div class="qa-q"><span class="qa-id">Q54</span>量化中的集成学习（Ensemble Learning）策略有哪些？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>方法</th><th>原理</th><th>量化应用</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Bagging</strong></td><td>多个模型在不同子样本上训练，平均预测</td><td>随机森林做因子打分</td></tr>
+            <tr><td><strong>Boosting</strong></td><td>串行训练，每个模型修正前一个的残差</td><td>XGBoost/LightGBM 因子选股</td></tr>
+            <tr><td><strong>Stacking</strong></td><td>用元模型组合基模型的预测</td><td>第一层多个异质模型，第二层线性组合</td></tr>
+            <tr><td><strong>Blending</strong></td><td>简单加权平均多个模型的输出</td><td>多策略信号等权/风险平价组合</td></tr>
+          </tbody>
+        </table>
+        <p><strong>量化中的特殊集成技巧</strong>：</p>
+        <ul>
+          <li><strong>时间集成</strong>：对不同时间窗口训练的模型取平均，增强稳定性；</li>
+          <li><strong>因子集成</strong>：同一个 Alpha 逻辑，用多个模型（线性、树、NN）分别实现，取中位数信号；</li>
+          <li><strong>交叉验证集成</strong>：K 个 Fold 的模型全部保留，对新数据取 K 个预测的均值。</li>
+        </ul>
+        <p><strong>核心洞察</strong>：集成学习的价值<strong>不在于提高精度，而在于降低方差</strong>——在低信噪比的金融数据中，降低方差比提高精度更重要。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为何集成的价值在降方差——一个简单的方差公式</summary>
+          <div class="expand-body">
+            <p><strong>1. 用一行公式说清"为什么降方差"。</strong> 设 $M$ 个模型，每个预测方差 $\sigma^2$，两两相关系数为 $\rho$。等权平均后的方差是：</p>
+            <p>$$\text{Var}\!\left(\frac{1}{M}\sum_{i=1}^{M} \hat y_i\right) = \rho\,\sigma^2 + \frac{1-\rho}{M}\,\sigma^2$$</p>
+            <p>看这个式子能读出两件事：</p>
+            <ul>
+              <li>第二项 $\frac{1-\rho}{M}\sigma^2$ 随 $M\to\infty$ 趋于 0 —— 加更多模型能把"独立的"那部分方差抹平；</li>
+              <li>但第一项 $\rho\sigma^2$ <strong>是地板，降不下去</strong>。所以集成的关键不是堆数量，而是让基模型<strong>尽量低相关（$\rho$ 小）</strong>。</li>
+            </ul>
+            <p>这解释了量化为何强调<strong>异质集成</strong>（线性 + 树 + NN）：它们犯错的方式不同，$\rho$ 低，平均后方差大降；而堆 100 个超参微调的同款 XGBoost，$\rho\approx 1$，几乎白堆。</p>
+            <p><strong>2. 为什么"降方差"比"提精度"在金融里更值钱。</strong> 回到 Q41 主线：金融信号 $\text{Var}(f)$ 本就微薄，单模型的预测方差却很大。集成几乎不改变 Bias（平均不会让你更准），但能显著压低预测方差 → 信号更稳、回撤更小、夏普更高。在 $R^2\approx 1\%$ 的世界里，<strong>"稳"就是收益</strong>。</p>
+            <p><strong>3. 三类技巧分别打哪个变量。</strong></p>
+            <table>
+              <thead><tr><th>技巧</th><th>降的是</th></tr></thead>
+              <tbody>
+                <tr><td>异质模型集成（线性/树/NN）</td><td>压低 $\rho$（错误不相关）</td></tr>
+                <tr><td>时间集成 / CV 集成</td><td>增大有效 $M$、平滑单期噪声</td></tr>
+                <tr><td>取中位数而非均值</td><td>对离群预测更鲁棒（抗厚尾）</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"Bagging 和 Boosting 谁降方差谁降偏差？"<br/><strong>答：</strong>Bagging 主降方差（并行、独立子样本平均）；Boosting 主降偏差（串行拟合残差），但也更易过拟合，金融里要早停 + 强正则。</p>
+              <p><strong>问：</strong>"Stacking 在金融的风险？"<br/><strong>答：</strong>元模型若在含未来信息的预测上训练会泄漏，必须用 out-of-fold 预测做二层输入；且二层模型要简单（如非负线性），否则又过拟合。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q55">
+      <div class="qa-q"><span class="qa-id">Q55</span>大语言模型（LLM）在量化中有哪些应用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>已落地的应用</strong>：</p>
+        <ul>
+          <li><strong>新闻/公告情感分析</strong>：用 LLM 解析财报电话会议、新闻、社交媒体的情绪；</li>
+          <li><strong>事件提取</strong>：从非结构化文本中提取并购、高管变动、产品发布等事件；</li>
+          <li><strong>研报摘要与因子化</strong>：将卖方研报的观点量化为多空信号；</li>
+          <li><strong>代码辅助</strong>：加速策略开发、回测代码编写。</li>
+        </ul>
+        <p><strong>前沿探索</strong>：</p>
+        <ul>
+          <li><strong>LLM 作为 Alpha 信号</strong>：直接让 LLM 根据新闻判断涨跌方向；</li>
+          <li><strong>多模态理解</strong>：结合文本、表格、图像（如 K 线图）的分析；</li>
+          <li><strong>策略推理</strong>：让 LLM 解释因子失效原因或生成交易假设。</li>
+        </ul>
+        <p><strong>关键限制</strong>：</p>
+        <ul>
+          <li>推理成本高，实时交易中延迟大；</li>
+          <li>幻觉问题——LLM 可能自信地给出错误的金融分析；</li>
+          <li>训练数据截止日期导致的信息滞后；</li>
+          <li>不适合需要精确数值计算的场景。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：已落地 vs 前沿的分界线、幻觉/延迟/信息滞后/前视的工程化应对</summary>
+          <div class="expand-body">
+            <p><strong>1. 为什么"文本→特征"已落地，而"LLM 直接当 alpha"仍在前沿。</strong> 分界线在于<strong>LLM 被用在哪一环</strong>：</p>
+            <ul>
+              <li><strong>已落地</strong>：LLM 只做<strong>非结构化文本 → 结构化特征</strong>（情感分、事件标签、实体抽取），下游仍交给传统量化模型做预测与组合。LLM 在这里替代的是人工读研报/读新闻，价值确定、可验证、可回测。</li>
+              <li><strong>前沿/谨慎</strong>：让 LLM <strong>直接输出涨跌方向或仓位</strong>。问题是它没有市场的因果模型、输出不稳定、且极难做无泄漏回测（见下）。</li>
+            </ul>
+            <p><strong>2. 四个限制的工程化应对。</strong></p>
+            <table>
+              <thead><tr><th>限制</th><th>本质</th><th>应对</th></tr></thead>
+              <tbody>
+                <tr><td><strong>幻觉</strong></td><td>会自信地编造数字/事实</td><td>RAG 接真实数据源、强制引用、结构化输出 + 校验、关键数值不让 LLM 算</td></tr>
+                <tr><td><strong>延迟/成本</strong></td><td>大模型推理慢、贵</td><td>低频/盘后用大模型抽特征；高频严禁在线路径调用；蒸馏成小模型</td></tr>
+                <tr><td><strong>信息滞后</strong></td><td>训练截止日 + 不知道最新事件</td><td>RAG 注入实时信息；别依赖模型"自带"的市场知识</td></tr>
+                <tr><td><strong>前视/泄漏（回测特有）</strong></td><td>模型权重里已"知道"历史结局</td><td>用"知识截止日早于回测期"的模型；或只用其文本理解能力而非记忆，且分时点严格 PIT 喂数据</td></tr>
+              </tbody>
+            </table>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ LLM 回测的隐形前视偏差</div>
+              <p>用今天的 LLM 去"回测"两年前的新闻判断涨跌，模型可能<strong>早已在训练语料里见过那段时间的后续走势</strong>——这是一种几乎无法察觉的前视偏差。严肃做法是采用知识截止日早于回测起点的模型版本，或仅把 LLM 当作不带记忆的文本编码器。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问：</strong>"为什么不让 LLM 直接做数值计算/组合优化？"<br/><strong>答：</strong>LLM 不擅长精确算术与约束优化，且不可复现；数值环节交给确定性求解器，LLM 只负责理解与抽取。</p>
+              <p><strong>问：</strong>"LLM 情感因子怎么验证有效？"<br/><strong>答：</strong>把情感分当普通因子，做 IC / 分层回测 / 与现有因子正交化后看增量，严格 OOS——和任何因子一视同仁。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

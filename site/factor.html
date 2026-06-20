@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>因子与 Alpha 策略 · Quant Research 知识库</title>
+  <meta name="description" content="因子投资基础、量价因子、IC/IR、组合优化与回测评估的面试八股与深度拓展。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="factor">
+  <main class="content">
+    <h1>因子与 Alpha 策略</h1>
+    <p class="page-lead">这一页覆盖 Q29–Q40：从「什么是因子 / Alpha 与 Beta」一路讲到 Fama-French 模型、量价因子构建、IC/IR、组合优化（MVO 与风险平价）与回测评估（偏差、过拟合、交易成本）。适合刚入门的大一新生建立完整框架，也适合求职者临阵磨枪——每道硬核题都配了「🔬 深度拓展」，含推导、踩坑案例与面试追问演练。</p>
+
+    <div class="callout note">
+      <div class="callout-title">🧭 怎么读这一页</div>
+      <p>因子研究的主线只有一句话：<strong>找到能在截面上预测未来收益、且不能被已知风险解释的信号，再用尽量低的成本把它做成组合</strong>。下面四个章节就是这条主线的四个环节——信号是什么（Q29–30）、怎么造怎么评（Q31–34）、怎么配权重（Q35–36）、怎么验证不是骗自己（Q37–40）。</p>
+    </div>
+
+    <!-- ===================== 因子投资基础 ===================== -->
+    <h2 id="因子投资基础">因子投资基础（Q29–Q30）</h2>
+
+    <div class="qa-card" id="q29">
+      <div class="qa-q"><span class="qa-id">Q29</span>什么是因子（Factor）？Alpha 和 Beta 的区别？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>因子</strong>：能够系统性解释资产收益率截面差异的变量。换句话说，把一堆股票按某个变量（市值、估值、动量……）排序，如果排序能稳定地对应到未来收益的高低，这个变量就是一个因子。</p>
+        <p><strong>Alpha vs Beta</strong>：</p>
+        <ul>
+          <li><strong>Beta</strong>（系统性风险暴露）：承担市场、规模、价值等公共因子风险获得的补偿，<em>人人都可以获取</em>，本质是风险溢价。</li>
+          <li><strong>Alpha</strong>（超额收益）：在控制所有已知因子暴露后<em>剩余</em>的收益，来自信息优势或更优的执行。</li>
+        </ul>
+        <p>用一个回归把两者拆开：</p>
+        <p>$$r_i - r_f = \alpha_i + \beta_{i,MKT} \cdot (r_{MKT} - r_f) + \beta_{i,SMB} \cdot SMB + \beta_{i,HML} \cdot HML + \epsilon_i$$</p>
+        <p>如果截距项 $\alpha_i$ 显著大于零，说明存在无法被已知因子解释的超额收益。</p>
+        <p><strong>核心洞察</strong>：今天的 Alpha 可能是明天的 Beta——当一个信号被足够多的人知晓和使用后，它就变成了一个定价因子。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：一个信号被发现后，是怎么一步步被「定价吃掉」的？</summary>
+          <div class="expand-body">
+            <p>Alpha 衰减不是玄学，它有一条清晰的链条。设想你发现了一个真实有效的信号（比如「低估值股票未来收益更高」）：</p>
+            <ol>
+              <li><strong>独享期</strong>：只有你知道。你买入被低估的股票，赚到的是真 Alpha——别人还没参与，价格还没反应。</li>
+              <li><strong>扩散期</strong>：论文发表 / 同行复现 / 卖方研报推广。越来越多资金涌入买同一批股票，<em>把价格买上去</em>。结果是：未来预期收益被压低，信号的盈利空间缩小。</li>
+              <li><strong>定价期</strong>：信号变成了一个「人人都做」的公共风险敞口。它仍然可能有正收益，但这收益现在是<strong>风险补偿（Beta）</strong>，不再是信息优势（Alpha）——你赚的钱本质是替别人承担了这个因子在坏年份大跌的风险。</li>
+            </ol>
+            <p><strong>历史例子一：规模因子（Size / SMB）</strong>。Banz(1981) 发现小盘股长期跑赢大盘股，曾被视为强 Alpha。但论文广为人知、小盘指数基金大量发行之后，1980 年代末到 2000 年代，小盘溢价显著减弱甚至消失了很长时间。今天 size 基本被当作一个（还不太稳定的）Beta 因子，而不是免费午餐。</p>
+            <p><strong>历史例子二：价值因子（Value / HML）</strong>。价值股长期溢价是 Fama-French 的基石，但 2010s 经历了史上最长的价值因子回撤（"value is dead" 讨论），很多人认为是<em>拥挤 + 无形资产会计失真 + 利率环境</em>共同作用。这正说明：一个被广泛交易的因子，其溢价会随资金、环境周期性地被压缩甚至反转。</p>
+            <p><strong>给新生的直觉</strong>：Alpha 是「别人还不知道的认知差」，Beta 是「大家都知道、靠承担风险拿补偿」。研究的难点不在于找一个历史上有效的信号（这很容易），而在于判断它<em>还能不能继续有效</em>——也就是它现在处于上面哪个阶段。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「你说今天的 Alpha 是明天的 Beta，那是不是所有 Alpha 最终都会消失？做主动量化还有意义吗？」</p>
+              <p><strong>答思路</strong>：不会全部消失。① <em>有套利上限的 Alpha</em> 才会被吃掉——容量大、易复制、无交易摩擦的信号衰减最快；而容量小、依赖独特数据/执行、或来自难以套利的结构性约束（如做空限制、流动性约束）的 Alpha 衰减慢。② 市场是动态的，新数据、新资产、新参与者不断产生新的认知差。③ 真正的护城河往往不是「某个因子」，而是<em>持续生产新因子的研究流程 + 低成本执行能力</em>。一句话收尾：「我们赚的不是某个固定信号的钱，是比市场更快迭代认知的钱。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q30">
+      <div class="qa-q"><span class="qa-id">Q30</span>解释 Fama-French 三因子和五因子模型</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>三因子模型（1993）</strong>：</p>
+        <ul>
+          <li><strong>MKT（市场因子）</strong>：市场组合超额收益 $r_{MKT}-r_f$。</li>
+          <li><strong>SMB（Small Minus Big）</strong>：小盘股组合减大盘股组合的收益。</li>
+          <li><strong>HML（High Minus Low）</strong>：高 B/M（价值股）减低 B/M（成长股）的收益。</li>
+        </ul>
+        <p><strong>五因子模型（2015）新增</strong>：</p>
+        <ul>
+          <li><strong>RMW（Robust Minus Weak）</strong>：高盈利能力 vs 低盈利能力。</li>
+          <li><strong>CMA（Conservative Minus Aggressive）</strong>：低投资（保守）vs 高投资（激进）。</li>
+        </ul>
+        <p><strong>核心贡献</strong>：建立了因子投资的分析框架。任何策略的收益都应该用这些因子回归分解——如果 Alpha 不显著，说明你只是在承担已知风险。</p>
+        <p><strong>争议</strong>：HML 在五因子模型中可能是冗余的（被 RMW 和 CMA 吸收）；动量因子（UMD）未被包含但实证上很强。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：2×3 排序怎么造因子？HML 冗余之争、动量为何被排除？</summary>
+          <div class="expand-body">
+            <p><strong>① 因子怎么「造」出来——2×3 portfolio sorts</strong></p>
+            <p>Fama-French 的因子不是回归系数，而是<strong>真实可投资的多空组合收益序列</strong>。以 HML 为例，每年重构一次：</p>
+            <ol>
+              <li><strong>先按市值二分</strong>：所有股票按市值中位数分成 Small(S) / Big(B) 两组。</li>
+              <li><strong>再按 B/M 三分</strong>：在每组内按账面市值比 B/M 的 30%/70% 分位分成 Low/Neutral/High 三档。</li>
+              <li>于是得到 $2\times3=6$ 个组合：S/L, S/M, S/H, B/L, B/M, B/H，每个组合内市值加权。</li>
+              <li><strong>HML</strong> $= \tfrac12(\text{S/H}+\text{B/H}) - \tfrac12(\text{S/L}+\text{B/L})$——「高减低」，且通过同时在大小盘里做，<em>剥离了规模的干扰</em>。</li>
+              <li><strong>SMB</strong> 则是三档 B/M 内「小减大」的平均，剥离了价值的干扰。</li>
+            </ol>
+            <p>这种「双重排序」设计的妙处：构造 HML 时已经对 size 中性，构造 SMB 时已经对 value 中性，两个因子相对正交，便于解释。</p>
+            <p><strong>② HML 冗余之争</strong></p>
+            <p>Fama-French(2015) 自己发现：在美股样本里，一旦加入 RMW 和 CMA，<strong>HML 的截距（其自身 Alpha）变得不显著</strong>——也就是 HML 的收益几乎可以被「市场+规模+盈利+投资」完全解释。直觉上：价值股（高 B/M）往往就是<em>盈利稳健（高 RMW 倾向）且投资保守（高 CMA 倾向）</em>的公司，所以价值溢价有很大一部分其实是盈利和投资溢价的「打包」。但在国际市场和后续样本里 HML 又常常恢复显著，所以这是个「视样本而定」的争议，不是定论。</p>
+            <p><strong>③ 动量（UMD）为何强却没被纳入？</strong></p>
+            <ul>
+              <li><strong>实证上极强</strong>：Jegadeesh-Titman(1993) 的 12-1 月动量在几乎所有市场、资产类别都有效，Alpha 显著且持续。</li>
+              <li><strong>但 Fama-French 不愿纳入</strong>，有几个原因：(a) 动量换手极高、交易成本大，不像 size/value 那样是「买入持有」的稳态风险；(b) 它缺乏一个干净的<em>风险</em>故事——Fama 倾向于「溢价 = 风险补偿」，而动量更像是行为偏差（反应不足/过度），这与有效市场信仰冲突；(c) 动量有罕见但剧烈的「崩盘」（momentum crash，如 2009 反弹时空头暴涨）。</li>
+              <li>实务里大家照用 Carhart(1997) 四因子（三因子+UMD）。</li>
+            </ul>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「如果 HML 在五因子里冗余了，为什么实务里还要保留它？」</p>
+              <p><strong>答思路</strong>：① 冗余是「在美股这个样本、这段时间」的统计结论，换市场/换样本未必成立，保留它增强稳健性。② HML 有清晰的经济直觉和最长的历史数据，便于沟通和归因。③ RMW/CMA 依赖财务数据，更新慢、噪声大、跨市场可比性差；HML 用价格和账面值，可得性更好。④ 从组合角度，多一个低相关的腿有助分散——即使其边际 Alpha 不显著，它仍能改善风险结构。收尾：「统计显著性和实务价值是两回事，模型选择要兼顾解释力、稳健性和可操作性。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 量价因子与因子风险 ===================== -->
+    <h2 id="量价因子与因子风险">量价因子与因子风险（Q31–Q34）</h2>
+
+    <div class="qa-card" id="q31">
+      <div class="qa-q"><span class="qa-id">Q31</span>常见的量价因子有哪些？如何构建？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>因子类别</th><th>代表因子</th><th>构建逻辑</th></tr></thead>
+          <tbody>
+            <tr><td><strong>动量</strong></td><td>12-1 月动量</td><td>过去 12 个月累计收益（跳过最近 1 个月）</td></tr>
+            <tr><td><strong>反转</strong></td><td>短期反转</td><td>过去 1 个月 / 1 周收益取反</td></tr>
+            <tr><td><strong>波动率</strong></td><td>特质波动率</td><td>回归残差的标准差（IVOL）</td></tr>
+            <tr><td><strong>流动性</strong></td><td>Amihud 非流动性</td><td>$|r| / \text{Volume}$ 的均值</td></tr>
+            <tr><td><strong>换手率</strong></td><td>平均换手率</td><td>日均成交量 / 流通股本</td></tr>
+            <tr><td><strong>量价背离</strong></td><td>价升量缩</td><td>价格与成交量趋势方向不一致的程度</td></tr>
+          </tbody>
+        </table>
+        <p><strong>构建流程</strong>：</p>
+        <p>1. <strong>原始值计算</strong> → 2. <strong>截面标准化</strong>（z-score 或排序） → 3. <strong>异常值处理</strong>（MAD / Winsorize） → 4. <strong>行业/市值中性化</strong> → 5. <strong>缺失值填充</strong></p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：因子加工流水线，每一步到底在「修」什么？（含代码）</summary>
+          <div class="expand-body">
+            <p>原始因子值几乎不能直接用。下面逐步拆解，每一步都问一句「不做会怎样」：</p>
+            <ol>
+              <li><strong>原始值计算</strong>：按定义算出每只股票当期的因子值，例如动量 = $\prod_{t-12}^{t-1}(1+r_t)-1$。注意跳过最近 1 个月是为了避开短期反转效应的污染。</li>
+              <li><strong>去极值（MAD / Winsorize）—— 先去极值还是先标准化？先去极值。</strong><br/>
+                <em>为什么</em>：少数极端值（财报异常、并购、数据错误）会把均值和标准差严重带偏，导致 z-score 失真。<br/>
+                <em>MAD 法</em>：用中位数和绝对中位差，比均值/标准差更抗极端值：$\text{MAD}=\text{median}(|x_i-\tilde x|)$，把超出 $\tilde x \pm 3\cdot1.4826\cdot\text{MAD}$ 的值截断。Winsorize 则是把超过 1%/99% 分位的值压回分位点。</li>
+              <li><strong>截面标准化（z-score / rank）</strong>：把不同量纲、不同分布的因子拉到同一尺度，才能横向比较与合成。<br/>
+                <em>为什么用截面（cross-section）而非时序</em>：选股是「同一天在股票间排序」，所以要在<em>每个截面日内</em>做标准化。$z_i = (x_i - \mu_{\text{cs}})/\sigma_{\text{cs}}$。若因子分布偏态严重，直接用<strong>排序（rank）</strong>更稳健——这也是为什么 IC 常用 RankIC。</li>
+              <li><strong>行业 / 市值中性化</strong>：用因子对行业哑变量和 $\ln(\text{市值})$ 做截面回归，<strong>取残差</strong>作为中性化后的因子。<br/>
+                <em>为什么</em>：很多量价因子天然和行业、市值相关（例如小盘股波动天然大）。若不中性化，你的「波动率因子」可能只是变相在赌小盘 / 赌某个行业，暴露了你不想要的风险，且收益会被规模/行业周期主导。中性化后，因子表达的是「同行业、同市值里相对强弱」的纯净信息。</li>
+              <li><strong>缺失值填充</strong>：标准化后缺失值通常填 0（即「该股票在此因子上无信息，取行业/截面中位数水平」）。<br/>
+                <em>为什么不直接删</em>：删股票会缩小可投资域、引入选择偏差；填 0 等价于让缺失股票在该因子上「不表态」，对组合权重影响中性。</li>
+            </ol>
+            <pre><code>import numpy as np, pandas as pd
+
+def mad_clip(s, n=3.0):
+    med = s.median()
+    mad = (s - med).abs().median() * 1.4826
+    return s.clip(med - n*mad, med + n*mad)
+
+def neutralize(factor, ind_dummies, lncap):
+    # factor 对 行业哑变量 + ln市值 做截面回归，取残差
+    X = pd.concat([ind_dummies, lncap.rename("lncap")], axis=1).values
+    y = factor.values
+    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return pd.Series(y - X @ beta, index=factor.index)
+
+def build_factor(raw, ind_dummies, lncap):
+    f = mad_clip(raw)                      # 1. 去极值
+    f = (f - f.mean()) / f.std()           # 2. 截面标准化
+    f = neutralize(f, ind_dummies, lncap)  # 3. 行业市值中性化
+    return f.fillna(0.0)                   # 4. 缺失填 0
+</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 常见误区</div>
+              <p>顺序很关键：<strong>去极值 → 标准化 → 中性化</strong>。如果先标准化再去极值，极端值已经污染了均值/方差；如果不中性化就直接合成多因子，几个因子可能共同押注同一个行业/规模敞口，看似分散实则集中。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「中性化是回归取残差，那中性化会不会把因子的有效信息也一起去掉了？」</p>
+              <p><strong>答思路</strong>：会去掉的恰恰是「与行业/市值共线的那部分」收益预测力，这部分本来就不该算作 Alpha——它是规模/行业 Beta。如果中性化后因子就没效了，说明它原本的收益主要来自规模或行业暴露，而非独立信号，这正是我们想识别出来的。反之，中性化后仍显著的因子，才是真正能在「同类股票内部」选股的纯净 Alpha。补充：是否中性化也取决于策略目标——如果你就是要做行业轮动，那就不该对行业中性。</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q32">
+      <div class="qa-q"><span class="qa-id">Q32</span>什么是因子 IC（Information Coefficient）和 IR（Information Ratio）？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>IC</strong>：因子值与下期收益率的截面<strong>Rank 相关系数</strong>（Spearman）。衡量因子单期选股能力。
+            <ul>
+              <li>$IC \gt 0.03$ 就算不错了。</li>
+              <li>更稳健的变体：RankIC、quantile-spread。</li>
+            </ul>
+          </li>
+          <li><strong>ICIR</strong>：IC 均值除以 IC 标准差，衡量因子的稳定性：
+            <p>$$ICIR = \frac{\overline{IC}}{\sigma_{IC}}$$</p>
+            <p>$ICIR \gt 0.5$ 通常认为是优秀因子。</p>
+          </li>
+          <li><strong>IR（策略层面）</strong>：年化超额收益除以年化跟踪误差，衡量策略承担主动风险的效率：
+            <p>$$IR = \frac{\text{年化超额收益}}{\text{年化跟踪误差}}$$</p>
+          </li>
+        </ul>
+        <p><strong>基本定律（Fundamental Law of Active Management）</strong>：</p>
+        <p>$$IR \approx IC \times \sqrt{BR}$$</p>
+        <p>其中 $BR$（Breadth）是独立决策次数。含义：微弱的 IC 也可以通过大量独立决策积累出好的 IR。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：推导 $IR \approx IC\sqrt{BR}$，以及 RankIC / ICIR / t 统计的关系</summary>
+          <div class="expand-body">
+            <p><strong>① 基本定律的直觉推导</strong></p>
+            <p>把「主动管理」想成一连串赌注。每次决策（每只股票每期）你下一个注，注的「预测准确度」由 IC 衡量，注的「数量」由 BR（独立决策次数）衡量。关键假设：<em>各次决策相互独立</em>。</p>
+            <p>单次决策的信息含量 $\propto IC$。$BR$ 次<strong>独立</strong>决策叠加时，信号（期望收益）线性累加 $\propto BR\cdot IC$，而噪声（标准差）按独立求和只增长 $\propto\sqrt{BR}$。信噪比 = 信号/噪声：</p>
+            <p>$$IR=\frac{\text{信号}}{\text{噪声}}\propto\frac{BR\cdot IC}{\sqrt{BR}}=IC\cdot\sqrt{BR}$$</p>
+            <p><strong>含义有多反直觉</strong>：一个 IC 只有 0.05（几乎看不出来）的弱信号，只要能在 1000 次独立机会上反复使用，$IR\approx0.05\times\sqrt{1000}\approx1.58$——这就是「广度战胜深度」。高频/宽截面策略正是靠 BR 取胜，而不是靠某一笔押注特别准。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 「独立」是关键漏洞</div>
+              <p>$\sqrt{BR}$ 假设决策互相独立。现实中同一天 3000 只股票的预测高度相关（共同的市场/行业/因子驱动），<em>有效</em>广度远小于名义广度。Grinold-Kahn 后来引入「转移系数 TC」修正：$IR\approx TC\cdot IC\cdot\sqrt{BR}$，TC 衡量你的实际持仓和理想持仓的相关性（受约束、成本拖累）。面试里能点出「BR 不是简单数股票×天数，要看决策的相关性」就很加分。</p>
+            </div>
+            <p><strong>② RankIC vs IC（普通 Pearson IC）</strong></p>
+            <ul>
+              <li><strong>普通 IC</strong>：因子原始值与收益的 Pearson 相关，对极端值和非线性敏感。</li>
+              <li><strong>RankIC</strong>：先把因子值和收益都转成排名再求相关（即 Spearman）。<em>更稳健</em>，不受单调变换影响，能容忍极端值——这也是实务首选。如果一个因子 IC 高但 RankIC 低，多半是几个极端样本撑起来的，不可靠。</li>
+            </ul>
+            <p><strong>③ ICIR 与 t 统计的关系</strong></p>
+            <p>设有 $N$ 期 IC 观测，检验「IC 均值是否显著大于 0」的 t 统计量为：</p>
+            <p>$$t=\frac{\overline{IC}}{\sigma_{IC}/\sqrt{N}}=\frac{\overline{IC}}{\sigma_{IC}}\cdot\sqrt{N}=ICIR\cdot\sqrt{N}$$</p>
+            <p>所以 <strong>ICIR 就是「每期的 t 贡献」</strong>，而 ICIR（按期）年化后约为 $ICIR_{\text{年}}=ICIR_{\text{月}}\cdot\sqrt{12}$。这把 Q38 的「t 统计量」和这里的 ICIR 打通了：它们度量的是同一件事——信号相对其波动有多稳。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「我有两个因子，A 的 IC 均值 0.08 但 ICIR 0.3，B 的 IC 均值 0.04 但 ICIR 0.8，选哪个？」</p>
+              <p><strong>答思路</strong>：通常优先 B。IC 均值高代表「好的时候很赚」，但 ICIR 低说明 IC 波动大、时灵时不灵，可能某些时期还反向，组合层面贡献的 IR 不稳、回撤大。B 的 IC 虽小但极稳，按 $IR\approx ICIR\cdot(\text{广度调整})$ 它能贡献更可靠的风险调整收益，且更容易和其他因子叠加。当然还要看：两者相关性如何（能否互补）、IC 衰减速度、容量与成本。收尾：「研究里我更看重 ICIR / 稳定性，而不是孤立的 IC 峰值——稳定的弱信号可叠加，不稳的强信号会拖累组合。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q33">
+      <div class="qa-q"><span class="qa-id">Q33</span>因子的多重共线性问题如何处理？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>当多个因子高度相关时（如 EP 和 BP 都是价值因子），回归系数不稳定，<strong>单因子测试有效但组合后失效</strong>。</p>
+        <p><strong>处理方法</strong>：</p>
+        <ol>
+          <li><strong>正交化</strong>：对因子做 Gram-Schmidt 正交化或回归取残差。</li>
+          <li><strong>PCA 降维</strong>：提取主成分作为合成因子。</li>
+          <li><strong>因子分组</strong>：同类因子等权合成为一个复合因子。</li>
+          <li><strong>弹性网络（Elastic Net）</strong>：L1+L2 正则化自动处理共线性。</li>
+          <li><strong>VIF 检验</strong>：方差膨胀因子 $\gt 10$ 视为严重共线性。</li>
+        </ol>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么「单因子有效、组合后失效」？正交化 / 残差法 / VIF 的数值直觉</summary>
+          <div class="expand-body">
+            <p><strong>① 为什么共线性会让组合「失效」？</strong></p>
+            <p>多元回归 $y=X\beta+\epsilon$ 的系数解是 $\hat\beta=(X^TX)^{-1}X^Ty$。当两列因子高度相关，$X^TX$ 接近奇异（行列式趋近 0），求逆时会被放大——<strong>系数方差爆炸</strong>：</p>
+            <p>$$\text{Var}(\hat\beta_j)=\frac{\sigma^2}{(1-R_j^2)\sum_i(x_{ij}-\bar x_j)^2}$$</p>
+            <p>其中 $R_j^2$ 是「因子 j 被其它因子解释的程度」。$R_j^2\to1$（高度共线）时分母 $\to0$，方差 $\to\infty$。后果：系数符号乱跳、一正一负相互抵消（一个因子 +5，相关的另一个 -4.8），样本外稍有扰动权重就翻转——这就是「单测都行、放一起就废」。</p>
+            <p><strong>② VIF 的数值直觉</strong></p>
+            <p>方差膨胀因子 $VIF_j=\dfrac{1}{1-R_j^2}$ 就是上式里那个放大倍数。$R_j^2=0.9\Rightarrow VIF=10$（方差被放大 10 倍），$R_j^2=0.95\Rightarrow VIF=20$。所以「VIF&gt;10」对应「某因子 90% 的变动能被其它因子解释」，确实该处理了。</p>
+            <p><strong>③ 正交化 / 残差法的几何直觉</strong></p>
+            <p>Gram-Schmidt 正交化：把因子看成向量。要让因子 B 不和 A 共线，就把 B 投影到 A 上的分量减掉，只留下<em>垂直于 A 的残差部分</em>：</p>
+            <p>$$B^{\perp}=B-\frac{\langle B,A\rangle}{\langle A,A\rangle}A$$</p>
+            <p>这正是「B 对 A 回归取残差」。残差 $B^{\perp}$ 与 A 正交（相关性=0），表达的是「B 中 A 没有的增量信息」。多个因子按顺序逐一对前面所有因子取残差，就得到一组互不相关的正交因子，回归立刻稳定。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 正交化的代价：顺序敏感 + 可解释性下降</div>
+              <p>Gram-Schmidt 结果依赖<strong>正交化顺序</strong>——先放哪个因子，它就保留全部信息，后面的只拿残差。所以要把「最想保留原貌」的核心因子放前面（业界常称对称正交化 Schmidt 的变体来缓解顺序依赖）。另外残差因子的经济含义会变模糊（「BP 里 EP 没有的部分」不好讲故事）。</p>
+            </div>
+            <p><strong>④ 各方法适用场景</strong></p>
+            <table>
+              <thead><tr><th>方法</th><th>适合</th><th>缺点</th></tr></thead>
+              <tbody>
+                <tr><td>因子分组等权合成</td><td>同类因子（多个价值代理）</td><td>粗糙，丢失差异信息</td></tr>
+                <tr><td>残差正交化</td><td>有明确主次关系</td><td>顺序敏感、解释性差</td></tr>
+                <tr><td>PCA</td><td>纯预测、不需解释</td><td>主成分无经济含义</td></tr>
+                <tr><td>Elastic Net</td><td>因子很多、想自动筛</td><td>需调参，黑箱</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「既然共线性这么麻烦，为什么不干脆只留一个最强的因子，把相关的都删掉？」</p>
+              <p><strong>答思路</strong>：删因子会丢掉「增量信息」。两个相关因子相关性 0.8 也意味着 36% 的方差不共享——那部分可能正是独立的 Alpha。更好的做法是正交化/合成，<em>保留增量、消除冗余</em>。而且「最强」是样本内结论，样本外哪个更强不一定，多保留几个互补腿能分散单因子失效风险。收尾一句：「共线性的解法是<em>重组信息</em>而不是<em>丢弃信息</em>——目标是让每个因子贡献正交的增量。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q34">
+      <div class="qa-q"><span class="qa-id">Q34</span>什么是因子拥挤（Factor Crowding）？如何检测和应对？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>因子拥挤</strong>：过多资金追逐同一个因子策略，导致因子估值过高、预期收益下降、崩盘风险上升。</p>
+        <p><strong>检测信号</strong>：</p>
+        <ul>
+          <li>因子多空组合的估值价差达到历史极端。</li>
+          <li>短边借股成本飙升（做空拥挤）。</li>
+          <li>同类策略的相关性上升。</li>
+          <li>因子回撤加深且恢复变慢。</li>
+        </ul>
+        <p><strong>历史案例</strong>：2007 年 8 月量化危机——大量统计套利基金同时去杠杆，价值和动量因子在几天内回撤超过 20%。</p>
+        <p><strong>应对</strong>：</p>
+        <ul>
+          <li>监控因子估值水平和拥挤度指标。</li>
+          <li>分散因子来源（基本面+量价+另类数据）。</li>
+          <li>动态调整因子暴露。</li>
+          <li>保持流动性缓冲。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：2007 年 8 月「Quant Quake」全过程，与去杠杆螺旋</summary>
+          <div class="expand-body">
+            <p><strong>① 事件复盘：2007 年 8 月 6–9 日的三天</strong></p>
+            <p>当时大量量化多空基金（market-neutral）持有<em>高度相似</em>的因子组合：做多便宜/高质量/有动量的股票，做空贵的/低质量的。它们彼此并不知道仓位重叠有多严重——直到一起被迫平仓。</p>
+            <ol>
+              <li><strong>导火索</strong>：某家（或几家）大基金可能因为信贷市场压力（次贷危机正在酝酿）需要筹集现金，开始平掉股票多空仓位——卖出它的多头、买回它的空头。</li>
+              <li><strong>价格逆动</strong>：因为大家持仓雷同，它平仓时<em>砸的正是别人的多头、拉的正是别人的空头</em>。于是这些「应该跑赢」的因子组合突然巨亏。</li>
+              <li><strong>去杠杆螺旋（deleveraging spiral）</strong>：亏损 → 触及风控/保证金线 → 被迫减仓 → 减仓又是卖多买空 → 进一步压低因子收益 → 更多基金触线 → 再减仓……正反馈不断自我强化。</li>
+              <li><strong>极端反差</strong>：8 月 6–8 日因子组合录得 $-5\sigma$ 到 $-10\sigma$ 级别的亏损（按历史波动几乎不可能发生）；而 8 月 10 日去杠杆结束后，因子又<em>暴力反弹</em>——这恰恰证明亏损源于流动性踩踏而非基本面，是典型的拥挤+杠杆事故。</li>
+            </ol>
+            <p><strong>关键教训</strong>：风险不只来自你的因子<em>本身</em>，还来自<em>谁和你持有一样的仓位、用了多少杠杆</em>。当持仓拥挤 × 高杠杆 × 共同的风控规则，市场就内生了脆弱性——平时低相关的策略会在压力下相关性骤升（correlation goes to 1）。</p>
+            <p><strong>② 拥挤检测指标（实务）</strong></p>
+            <table>
+              <thead><tr><th>维度</th><th>指标</th><th>拥挤信号</th></tr></thead>
+              <tbody>
+                <tr><td>估值</td><td>因子多空腿的估值价差（如多头 P/E ÷ 空头 P/E）</td><td>达到历史高分位</td></tr>
+                <tr><td>做空</td><td>空头组合的借券成本 / 利用率（short interest）</td><td>飙升</td></tr>
+                <tr><td>拥挤度</td><td>因子组合的成对相关性、机构共同持仓重叠度（13F）</td><td>上升</td></tr>
+                <tr><td>动态</td><td>因子收益自相关、回撤深度与恢复时长</td><td>回撤变深、恢复变慢</td></tr>
+                <tr><td>资金流</td><td>同类 ETF/基金的资金净流入、换手</td><td>持续大幅流入</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「如果你监测到自己主用的因子已经很拥挤，但回测显示它依然有效，你会怎么做？」</p>
+              <p><strong>答思路</strong>：回测的「有效」是历史平均，掩盖了拥挤带来的<em>尾部崩盘风险上升</em>。我会：① 降杠杆、留流动性缓冲（拥挤事故的杀伤主要来自被迫平仓，杠杆是放大器）；② 降低该因子权重、增配低相关的因子来源（另类数据、不同频率），稀释共振；③ 提高对该因子的换手/估值门槛，避免在估值极端时还加仓；④ 做压力测试和「拥挤情景」演练，预设强制减仓的纪律而非临时拍脑袋。收尾：「拥挤不是让我放弃因子，而是让我把它从『满仓 all-in』降为『有风险预算、可快速撤离』的配置。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 组合优化 ===================== -->
+    <h2 id="组合优化">组合优化（Q35–Q36）</h2>
+
+    <div class="qa-card" id="q35">
+      <div class="qa-q"><span class="qa-id">Q35</span>均值-方差优化（MVO）的原理和问题？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>原理（Markowitz, 1952）</strong>：</p>
+        <p>$$\min_w \frac{1}{2} w^T \Sigma w \quad \text{s.t.} \quad w^T \mu = \mu_{\text{target}}, \quad \mathbf{1}^T w = 1$$</p>
+        <p>求解得到有效前沿上的最优组合。</p>
+        <p><strong>实践中的问题</strong>：</p>
+        <ol>
+          <li><strong>对输入极度敏感</strong>：期望收益率微小变化会导致权重剧烈变动（"误差最大化器"）。</li>
+          <li><strong>估计风险</strong>：期望收益率极难准确估计，协方差矩阵含噪。</li>
+          <li><strong>集中持仓</strong>：最优解常常极度集中在少数资产上。</li>
+          <li><strong>忽略交易成本</strong>：理论最优组合频繁调仓不现实。</li>
+        </ol>
+        <p><strong>改进方法</strong>：</p>
+        <ul>
+          <li>Black-Litterman 模型（融入主观观点）。</li>
+          <li>加入正则化约束（如持仓上下限、换手约束）。</li>
+          <li>风险平价（Risk Parity）：权重与波动率近似成反比：$$w_i \propto \frac{1}{\sigma_i}$$</li>
+          <li>最小方差组合（不需要估计期望收益率）。</li>
+          <li>收缩估计（Ledoit-Wolf）改进协方差矩阵输入。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：为什么 MVO 是「误差最大化器」？数值直觉与缓解手段</summary>
+          <div class="expand-body">
+            <p><strong>① 为什么叫 error maximizer（误差最大化器）？</strong></p>
+            <p>无约束 MVO 的解析解是：</p>
+            <p>$$w^*\propto\Sigma^{-1}\mu$$</p>
+            <p>问题出在两个地方的乘积：</p>
+            <ul>
+              <li><strong>$\mu$ 极难估</strong>：期望收益的估计误差巨大（年化收益的标准误差和波动同量级，几乎和噪声一样大）。优化器无法分辨「真的高收益」和「估计噪声导致的虚高」，于是它<em>专挑那些因为估计误差而看起来收益最高的资产重仓</em>——它在系统性地放大、押注估计误差，故称「误差最大化器」。</li>
+              <li><strong>$\Sigma^{-1}$ 放大相关资产的误差</strong>：当两资产高度相关，$\Sigma$ 接近奇异，求逆会把微小的 $\mu$ 差异放大成巨大的多空对冲头寸（一个 +300%、一个 -200%），权重剧烈、极端、不稳定。</li>
+            </ul>
+            <p><strong>② 数值直觉（一个小例子）</strong></p>
+            <p>两个资产相关性 0.9，你对它们期望收益的估计只差 0.1%（完全在噪声范围内）。MVO 会因为这 0.1% 的差，把组合做成「重仓 A、大幅做空 B」的极端对冲——因为在它眼里 A 是「更高收益、可被 B 对冲掉风险」的免费午餐。明天估计翻转 0.1%，权重就整个反过来。<strong>输入的噪声 → 输出的剧烈摆动</strong>，这就是敏感性。</p>
+            <p><strong>③ 三类缓解手段，对应不同病根</strong></p>
+            <table>
+              <thead><tr><th>手段</th><th>治哪个病</th><th>机制</th></tr></thead>
+              <tbody>
+                <tr><td><strong>约束</strong>（如 $0\le w_i\le 5\%$、禁止做空、换手上限）</td><td>极端/集中权重</td><td>直接限制解空间，防止优化器走极端；实证上常比「精确最优」更稳</td></tr>
+                <tr><td><strong>收缩估计（Ledoit-Wolf）</strong></td><td>$\Sigma$ 含噪、近奇异</td><td>把样本协方差向结构化目标（如常相关矩阵）收缩，$\hat\Sigma=\delta F+(1-\delta)S$，改善求逆稳定性</td></tr>
+                <tr><td><strong>Black-Litterman</strong></td><td>$\mu$ 难估、不稳</td><td>以市场均衡隐含收益为先验，再用贝叶斯把你的主观观点按置信度融合，得到平滑、合理的 $\mu$，权重不再极端</td></tr>
+                <tr><td><strong>最小方差 / 风险平价</strong></td><td>干脆不估 $\mu$</td><td>绕开最不可靠的输入（期望收益），只用相对可靠的 $\Sigma$</td></tr>
+              </tbody>
+            </table>
+            <p><strong>核心思想</strong>：MVO 的脆弱来自「把不可靠的输入当成精确真值去优化」。所有缓解手段本质都是<em>降低对输入精度的依赖</em>——要么约束输出、要么平滑输入、要么干脆少用最不可靠的输入。</p>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「为什么等权重（1/N）组合在很多实证里反而能跑赢精心优化的 MVO？」</p>
+              <p><strong>答思路</strong>：DeMiguel et al.(2009) 的著名结论。原因：MVO 要估 $\mu$ 和 $\Sigma$，估计误差带来的损失，常常超过「最优化」相对「天真分散」带来的理论收益——尤其在资产数多、样本期短时。1/N 不需要任何估计，<em>零估计误差、天然分散、零换手</em>，所以稳健。这不是说优化没用，而是提醒我们：<strong>模型复杂度要和数据能支撑的估计精度匹配</strong>；与其追求脆弱的精确最优，不如用约束/收缩/先验把优化「钝化」到接近等权但略有倾斜。收尾：「1/N 是检验任何优化器的硬基准——跑不赢它，说明你的估计误差吃掉了优化收益。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q36">
+      <div class="qa-q"><span class="qa-id">Q36</span>什么是风险平价（Risk Parity）？和等权有什么区别？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>风险平价</strong>：使每个资产对组合总风险的贡献相等。</p>
+        <p>资产 $i$ 的风险贡献：</p>
+        <p>$$RC_i = w_i \cdot (\Sigma w)_i$$</p>
+        <p>风险平价要求：</p>
+        <p>$$RC_1 = RC_2 = \cdots = RC_N = \frac{w^T \Sigma w}{N}$$</p>
+        <p><strong>vs 等权</strong>：等权是 $w_i = 1/N$（权重相等），风险平价是<em>风险贡献</em>相等。在波动率差异大的多资产组合中，等权会让高波动资产主导风险。</p>
+        <p><strong>典型应用</strong>：Bridgewater 的 All Weather 策略。股债配比中，股票波动率远高于债券，等权配比下股票贡献 90%+ 的风险；风险平价下需要大量增配债券（通常加杠杆），使风险贡献均衡。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：推导 $RC_i=w_i(\Sigma w)_i$ 为何「贡献」之和=总风险，及为何要加杠杆配债</summary>
+          <div class="expand-body">
+            <p><strong>① 风险贡献的推导（欧拉分解）</strong></p>
+            <p>组合波动率 $\sigma_p=\sqrt{w^T\Sigma w}$ 是权重的<strong>一次齐次函数</strong>（把所有 $w$ 翻倍，$\sigma_p$ 也翻倍）。由欧拉定理，一次齐次函数等于「各变量 × 其偏导」之和：</p>
+            <p>$$\sigma_p=\sum_i w_i\frac{\partial\sigma_p}{\partial w_i}$$</p>
+            <p>对 $\sigma_p=\sqrt{w^T\Sigma w}$ 求偏导：</p>
+            <p>$$\frac{\partial\sigma_p}{\partial w_i}=\frac{(\Sigma w)_i}{\sqrt{w^T\Sigma w}}=\frac{(\Sigma w)_i}{\sigma_p}$$</p>
+            <p>这叫资产 $i$ 的<strong>边际风险贡献（MRC）</strong>——多加一点 $i$ 的权重，总风险增加多少。于是资产 $i$ 的<strong>总风险贡献</strong>：</p>
+            <p>$$RC_i=w_i\cdot\frac{(\Sigma w)_i}{\sigma_p},\qquad \sum_i RC_i=\sigma_p$$</p>
+            <p>（教材里常省去分母 $\sigma_p$ 写成 $RC_i=w_i(\Sigma w)_i$，此时 $\sum_i RC_i=\sigma_p^2=$ 总方差，本质相同。）<strong>关键</strong>：风险贡献能<em>干净地加总成组合总风险</em>，这就是「让每块贡献相等」有意义的数学基础。</p>
+            <p><strong>② 为什么要加杠杆配债？</strong></p>
+            <p>对两资产、忽略相关性时，风险平价解约为 $w_i\propto 1/\sigma_i$（权重与波动率成反比）。假设股票年化波动 15%、债券 5%：</p>
+            <p>$$w_{\text{债}}:w_{\text{股}}=\frac{1}{5}:\frac{1}{15}=3:1\Rightarrow w_{\text{债}}=75\%,\ w_{\text{股}}=25\%$$</p>
+            <p>这样风险贡献才均衡。但问题来了：<strong>75% 配债的组合，预期收益太低</strong>——债券收益本来就低，重配债把组合收益拉到不够覆盖目标的水平。</p>
+            <p><strong>解决办法是加杠杆</strong>：先得到「风险均衡」的配比，再整体放大（借钱买更多），把组合总波动加到目标水平（比如 10%）。这样既保持了「股债风险贡献相等」的均衡结构，又把收益拉回可接受区间。这正是 Bridgewater All Weather 的精髓：<em>不在低风险资产上少配，而是借杠杆把整个均衡组合放大</em>。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 杠杆的隐含风险</div>
+              <p>风险平价靠「股债负相关 + 债券低波动」成立。一旦遇到<strong>股债双杀（如 2022 年加息）</strong>，债券不再对冲股票，杠杆反而放大亏损——这是风险平价被批评最多的软肋。所以它对「相关性稳定」和「融资成本」的假设很敏感。</p>
+            </div>
+            <p><strong>③ 三种配置法对比</strong></p>
+            <table>
+              <thead><tr><th>方法</th><th>均衡的是</th><th>需要估 $\mu$？</th><th>典型结果</th></tr></thead>
+              <tbody>
+                <tr><td>等权 1/N</td><td>名义权重</td><td>否</td><td>高波动资产主导风险</td></tr>
+                <tr><td>风险平价</td><td>风险贡献</td><td>否</td><td>重配低波动资产（需杠杆补收益）</td></tr>
+                <tr><td>MVO</td><td>风险调整后收益</td><td>是</td><td>权重极端、对输入敏感</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「风险平价完全不用期望收益，是不是意味着它<em>假设</em>所有资产的夏普比率相等？」</p>
+              <p><strong>答思路</strong>：正解！可以证明：当所有资产<strong>两两相关性相同且夏普比率相等</strong>时，风险平价组合恰好等于（杠杆调整后的）夏普最优 / 切点组合。所以风险平价隐含的「先验」就是「我不知道谁收益更高，就假设大家风险调整后收益一样好」——这是一个比 MVO「我能精确估出每个 $\mu$」<em>谦逊得多、也稳健得多</em>的假设。它放弃了预测收益的雄心，换来了对估计误差的免疫。收尾：「风险平价不是不做假设，而是把假设从『难估的 $\mu$』转移到了『更温和的等夏普先验』上。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== 回测与策略评估 ===================== -->
+    <h2 id="回测与策略评估">回测与策略评估（Q37–Q40）</h2>
+
+    <div class="qa-card" id="q37">
+      <div class="qa-q"><span class="qa-id">Q37</span>回测中常见的偏差（Bias）有哪些？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>偏差</th><th>描述</th><th>危害</th></tr></thead>
+          <tbody>
+            <tr><td><strong>前视偏差（Look-ahead Bias）</strong></td><td>使用了回测时刻不可得的未来信息</td><td>收益虚高，致命</td></tr>
+            <tr><td><strong>幸存者偏差（Survivorship Bias）</strong></td><td>只用了存续至今的股票/基金数据</td><td>高估历史收益</td></tr>
+            <tr><td><strong>过拟合偏差</strong></td><td>参数过度拟合历史数据</td><td>样本外表现崩塌</td></tr>
+            <tr><td><strong>交易成本忽略</strong></td><td>不考虑滑点、手续费、冲击成本</td><td>盈利被吃掉</td></tr>
+            <tr><td><strong>时间段选择偏差</strong></td><td>选择有利的回测区间</td><td>不具代表性</td></tr>
+          </tbody>
+        </table>
+        <p><strong>如何减轻</strong>：</p>
+        <ul>
+          <li>严格使用 point-in-time 数据库。</li>
+          <li>在回测框架中内置时间戳检查。</li>
+          <li>分样本内 / 样本外 / 前向验证。</li>
+          <li>纸交易（Paper Trading）验证。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：每种偏差的真实踩坑案例（重点：前视 & 幸存者）</summary>
+          <div class="expand-body">
+            <p><strong>① 前视偏差——最隐蔽、最致命，常常无意中犯</strong></p>
+            <ul>
+              <li><strong>财报日期踩坑</strong>：用 12 月 31 日的年报数据，在 1 月 1 日就拿来选股。但年报实际要到 3–4 月才披露！你用了「当时还不存在」的信息。<em>正确做法</em>：用 point-in-time 数据，按<strong>实际披露日</strong>而非<strong>报告期末日</strong>对齐。</li>
+              <li><strong>复权 / 调整后数据踩坑</strong>：用「事后复权」的价格、或事后修正过的财务数据回测。这些数字当时根本拿不到。</li>
+              <li><strong>标准化用了全样本</strong>：对整段历史做 z-score 标准化时，用了<em>包含未来</em>的均值和标准差。应当只用截至当期的滚动统计量。</li>
+              <li><strong>指数成分调整</strong>：用「今天的指数成分股」回测过去——成分是事后才纳入的（这其实也是幸存者偏差的近亲）。</li>
+            </ul>
+            <p><strong>真实案例直觉</strong>：一个策略回测夏普 3.0，上线后归零。排查发现——信号用了「收盘后才公布的财务修正值」，且按收盘价成交。等于「看到答案再下注」。前视偏差的可怕在于：它让回测<em>看起来非常好</em>，骗过你自己。</p>
+            <p><strong>② 幸存者偏差——你只看到了赢家</strong></p>
+            <ul>
+              <li><strong>退市股票被剔除</strong>：数据库只保留<em>现在还在交易</em>的股票，破产/退市/被并购的公司被删了。回测于是只在「活下来的赢家」上跑，自然高估收益——你从未买到那些归零的公司。</li>
+              <li><strong>基金业绩</strong>：评价共同基金长期收益时，<em>清盘的差基金消失了</em>，只剩活下来的，行业平均收益被系统性高估（学界估计每年高估 1–1.5%）。</li>
+              <li><strong>经典反直觉</strong>：「二战归来轰炸机弹孔分析」——Abraham Wald 指出该加固的是<em>没弹孔</em>的部位，因为中弹那些部位的飞机根本没飞回来。回测里「没飞回来的股票」就是退市股。</li>
+            </ul>
+            <p><em>正确做法</em>：用包含退市股的「全样本」数据库（含 delisting returns），让破产的票以真实的 -100% 计入。</p>
+            <p><strong>③ 其余偏差的踩坑速记</strong></p>
+            <table>
+              <thead><tr><th>偏差</th><th>真实踩坑</th></tr></thead>
+              <tbody>
+                <tr><td>过拟合</td><td>把参数从「20 日均线」一路试到「19.7 日」直到回测最漂亮——参数在拟合噪声</td></tr>
+                <tr><td>交易成本忽略</td><td>日频反转策略毛收益年化 30%，扣掉双边千分之几的成本和冲击后变负</td></tr>
+                <tr><td>时段选择</td><td>只回测 2009–2021 长牛，刻意避开 2008 和 2022，策略「从没见过熊市」</td></tr>
+              </tbody>
+            </table>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「给你一个夏普 4 的回测，你的第一反应是什么？怎么排查它是不是有前视偏差？」</p>
+              <p><strong>答思路</strong>：第一反应是<em>怀疑</em>——夏普 4 在真实世界极罕见，大概率是 bug 或偏差而非天才。排查清单：① 检查每个数据点的<strong>可得时间戳</strong>，财务数据是否按披露日对齐、价格是否未来复权；② 把所有信号<strong>统一滞后一期</strong>（lag 1），如果收益断崖式下跌，说明原来在用同期/未来信息；③ 检查标准化/归一化是否用了全样本统计量；④ 检查股票池是否含退市股；⑤ 看收益是否集中在<em>少数几天/几只票</em>（可能是数据错误）；⑥ 最后做严格的样本外 + 纸交易。收尾：「好得不真实的回测，先假设它是错的，去证伪——这比急着上线安全得多。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q38">
+      <div class="qa-q"><span class="qa-id">Q38</span>常用的策略评估指标有哪些？各自的局限？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>指标</th><th>公式/含义</th><th>局限</th></tr></thead>
+          <tbody>
+            <tr><td><strong>年化收益率</strong></td><td>$(1+R_{\text{total}})^{252/T} - 1$</td><td>不反映风险</td></tr>
+            <tr><td><strong>夏普比率（Sharpe）</strong></td><td>$\frac{R_p - R_f}{\sigma_p}$</td><td>假设正态分布，忽略尾部风险</td></tr>
+            <tr><td><strong>索提诺比率（Sortino）</strong></td><td>用下行偏差替代标准差</td><td>更关注下行风险，但对下行的定义依赖阈值</td></tr>
+            <tr><td><strong>最大回撤（Max DD）</strong></td><td>峰值到谷底的最大跌幅</td><td>只描述单次最坏情况</td></tr>
+            <tr><td><strong>Calmar 比率</strong></td><td>年化收益 / 最大回撤</td><td>对单一极端事件敏感</td></tr>
+            <tr><td><strong>信息比率（IR）</strong></td><td>超额收益 / 跟踪误差</td><td>依赖于基准选择</td></tr>
+          </tbody>
+        </table>
+        <p><strong>进阶指标</strong>：</p>
+        <ul>
+          <li><strong>t 统计量</strong>：检验夏普比率是否显著异于零：$$t = \frac{SR \times \sqrt{T}}{\text{correction}}$$</li>
+          <li><strong>Bailey-López de Prado 建议</strong>：至少需要 $t \gt 3$ 才可信（考虑多重检验后）。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：夏普的正态假设缺陷、Deflated Sharpe Ratio、为何要 $t\gt3$</summary>
+          <div class="expand-body">
+            <p><strong>① 夏普比率的正态假设缺陷</strong></p>
+            <p>夏普比率 $SR=\dfrac{R_p-R_f}{\sigma_p}$ 只用了前两阶矩（均值、方差），<em>隐含假设收益近似正态</em>。但真实策略收益常有：</p>
+            <ul>
+              <li><strong>负偏（left skew）</strong>：很多策略「平时小赚、偶尔巨亏」（如卖期权、套利、carry）。它们夏普很高，但实际上是在<em>捡硬币于压路机前</em>——尾部藏着毁灭性风险，夏普完全看不到。</li>
+              <li><strong>肥尾（excess kurtosis）</strong>：极端事件比正态预测的频繁得多，$\sigma$ 低估了真实风险。</li>
+            </ul>
+            <p>所以两个夏普都等于 2 的策略，一个可能是稳健的，另一个可能是「卖灾难保险」，风险天差地别。索提诺、最大回撤、偏度/峰度就是用来补这块的。</p>
+            <p><strong>② 为什么需要 $t\gt3$（而不是统计学常规的 $t\gt2$）？</strong></p>
+            <p>核心问题是<strong>多重检验（multiple testing）</strong>。常规 $t\gt1.96$（约 2）对应「单次检验 5% 假阳性率」。但量化研究里，你不是只测一个策略——你<em>试了成百上千个</em>因子、参数、组合，然后挑出最好的那个。</p>
+            <p>如果你独立试 20 个纯随机的策略，按 5% 假阳率，<em>平均就有 1 个会「显著”</em>——纯靠运气。试 1000 个，会有约 50 个假阳性「看起来很棒」。你挑出来的「最佳策略」极可能就是这种幸运噪声。</p>
+            <p>提高门槛到 $t\gt3$（对应单次 ~0.1% 假阳率）就是在为「我偷看了很多次」付出代价——这正是 Bonferroni 等多重检验校正的精神：<em>试得越多，门槛越高</em>。</p>
+            <p><strong>③ Deflated Sharpe Ratio（DSR）的直觉</strong></p>
+            <p>Bailey & López de Prado 的 DSR 把上面的逻辑做成公式。直觉三句话：</p>
+            <ol>
+              <li>你试了 $N$ 个策略，挑出最高夏普——这个最大值本身<em>期望就大于 0</em>，哪怕所有策略真实夏普都是 0（顺序统计量：试得越多，最大值越高）。</li>
+              <li>DSR 先估出「在你试的次数 $N$、收益的偏度峰度下，纯靠运气能达到的夏普基准是多少」。</li>
+              <li>再问：你观测到的夏普，<em>显著超过这个运气基准</em>吗？超过才算真本事。</li>
+            </ol>
+            <p>它同时惩罚：试的次数多（$N$ 大）、样本短（$T$ 小）、负偏、肥尾。这些都会抬高「运气门槛」、压低 DSR。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 关键诚实点：要记录你试了多少次</div>
+              <p>DSR 需要 $N$（试验次数）。很多人作弊：只报告最后那个漂亮策略，假装只试了一次。诚实的研究流程应当<strong>记录所有试过的变体</strong>，否则任何多重检验校正都无从谈起——这也是为什么 López de Prado 强调「研究日志」。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「一个策略样本内夏普 2.5、$t=2.2$，你会上线吗？」</p>
+              <p><strong>答思路</strong>：不会，至少不直接上。① $t=2.2$ 只够单次检验的门槛，但我们做了大量搜索，要按多重检验看——$t\gt3$ 才稳，2.2 很可能是搜索出来的运气。② 要先问「试了多少个变体」，算 Deflated Sharpe。③ 检查收益分布的偏度/峰度——夏普 2.5 若来自负偏策略，尾部风险被掩盖。④ 看样本外 / walk-forward 表现是否一致。⑤ 最关键：有没有<em>事前</em>的经济学逻辑，还是纯数据挖掘。收尾：「2.2 不是不能要，而是它要求我先排除『多试出来的运气』和『隐藏的尾部风险』，再用样本外和经济逻辑交叉验证。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q39">
+      <div class="qa-q"><span class="qa-id">Q39</span>什么是过拟合？如何在策略开发中避免？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>过拟合</strong>：模型/策略在历史数据上表现优异，但在新数据上表现大幅衰减。本质上是<em>拟合了噪声而非信号</em>。</p>
+        <p><strong>判断信号</strong>：</p>
+        <ul>
+          <li>样本内夏普比率远高于样本外。</li>
+          <li>策略逻辑过于复杂（大量参数、特殊规则）。</li>
+          <li>对参数微调极度敏感。</li>
+        </ul>
+        <p><strong>避免方法</strong>：</p>
+        <ol>
+          <li><strong>数据层面</strong>：训练集/验证集/测试集严格分离；使用 Walk-Forward 验证。</li>
+          <li><strong>模型层面</strong>：限制参数数量；用简单模型作为基线。</li>
+          <li><strong>统计层面</strong>：对多重测试做校正（Deflated Sharpe Ratio）。</li>
+          <li><strong>经济学层面</strong>：策略逻辑必须有合理的经济学解释。</li>
+          <li><strong>稳健性检验</strong>：更换时间窗口、市场、参数范围看策略是否稳定。</li>
+        </ol>
+        <p><strong>Marcos López de Prado 的提醒</strong>：回测更适合承担验证职责，研究本身应先来自假设与机制。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：样本内外夏普落差、Walk-Forward、为何「经济解释优先」</summary>
+          <div class="expand-body">
+            <p><strong>① 样本内 vs 样本外的夏普落差——过拟合的体温计</strong></p>
+            <p>关键诊断指标是「衰减度」：</p>
+            <p>$$\text{衰减} = SR_{\text{样本内}} - SR_{\text{样本外}}$$</p>
+            <p>健康策略只有小幅衰减（信号真实，新数据上仍有效）；过拟合策略<em>断崖下跌</em>（样本内 3.0、样本外 0.2），因为它记住的是历史的噪声，而噪声不会重复。López de Prado 的 <strong>PBO（Probability of Backtest Overfitting）</strong> 就是量化「样本内最优的配置，在样本外排到后半段的概率」——概率越高，越是过拟合。</p>
+            <p><strong>② Walk-Forward 验证：模拟「真实地往前走」</strong></p>
+            <p>普通的「随机划分训练/测试」对时间序列<em>是错的</em>（会用未来训练、预测过去，泄漏信息）。Walk-Forward 尊重时间箭头：</p>
+            <pre><code>窗口1: 训练[2010-2013] → 测试[2014]
+窗口2: 训练[2011-2014] → 测试[2015]
+窗口3: 训练[2012-2015] → 测试[2016]
+...每次只用过去拟合参数，在紧接着的未来段检验，再滚动前移
+</code></pre>
+            <ul>
+              <li><strong>滚动窗口（rolling）</strong>：训练窗长度固定，整体往前滑（适应市场变化）。</li>
+              <li><strong>扩展窗口（anchored/expanding）</strong>：起点不变，训练集越来越长（用尽所有历史）。</li>
+            </ul>
+            <p>把每个测试段的收益拼起来，得到一条<em>从未被参数拟合污染过</em>的样本外曲线——这比单次样本外更接近真实运行。进阶有 López de Prado 的 <strong>CPCV（组合purged交叉验证）</strong>，用 purge/embargo 切断训练测试间的信息泄漏。</p>
+            <p><strong>③ 为什么「经济学解释优先」是最强的防过拟合武器？</strong></p>
+            <p>统计手段（样本外、DSR、Walk-Forward）都是<em>事后</em>检验，能减少但不能消除「碰巧好看」的风险——只要你搜索空间够大，总能撞到通过所有检验的运气策略。</p>
+            <p><strong>事前的经济逻辑</strong>则从源头压缩了搜索空间：你不是盲目暴力搜参数，而是<em>先有一个关于市场为什么会这样定价的假设</em>（行为偏差、风险补偿、结构性约束、流动性供给……），再去数据里验证它。这把「从 10000 个随机想法里挑最好的」变成「检验 1 个有理由的想法」——多重检验的负担骤降，假阳性概率骤降。</p>
+            <p>López de Prado 的核心倡议正是：<strong>回测是验证工具，不是发现工具</strong>。先有机制假设，再用回测证伪；而不是对着回测曲线反复调参、让回测来「发明」策略——后者几乎必然过拟合。</p>
+            <div class="callout tip">
+              <div class="callout-title">✅ 一句话区分</div>
+              <p>「<em>因为 X 经济机制，所以这个信号应该有效，回测确认了</em>」是好研究；「<em>我试出来这组参数回测最好，编一个故事解释它</em>」是过拟合（HARKing：事后编假设）。方向反了。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「Walk-Forward 也通过了，DSR 也达标了，是不是就一定没过拟合？」</p>
+              <p><strong>答思路</strong>：不能保证。① 如果你<em>反复</em>看 Walk-Forward 结果再调策略，样本外其实已经变成了「第二个样本内」——信息泄漏回流，检验失效。② 所有历史检验都只覆盖<em>已发生</em>的市场状态，遇到结构性新情景（新政策、新参与者）仍可能失效。③ 检验本身也是有限样本，存在统计误差。所以最终防线还是<em>经济逻辑 + 小仓位实盘/纸交易 + 持续监控衰减</em>。收尾：「过拟合不能被某个检验『一次性证伪』，它是个需要持续警惕的概率——统计检验降低它，经济逻辑约束它，实盘监控兜底它。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="qa-card" id="q40">
+      <div class="qa-q"><span class="qa-id">Q40</span>什么是交易成本模型？如何估计市场冲击成本？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p><strong>交易成本构成</strong>：</p>
+        <ul>
+          <li><strong>显性成本</strong>：佣金、印花税、交易所费用。</li>
+          <li><strong>隐性成本</strong>：买卖价差（bid-ask spread）、市场冲击（market impact）、时机成本。</li>
+        </ul>
+        <p><strong>市场冲击模型</strong>：</p>
+        <p><strong>Almgren-Chriss 模型</strong>（经典）：</p>
+        <p>$$\text{Impact} = \sigma \cdot \gamma \cdot \left(\frac{V}{ADV}\right)^{\delta}$$</p>
+        <p>其中 $V$ 是订单量，$ADV$ 是日均成交量，$\gamma$ 和 $\delta$ 是经验参数。</p>
+        <p><strong>平方根模型</strong>（业界常用简化版）：</p>
+        <p>$$\text{Impact} \approx \sigma \cdot \sqrt{\frac{V}{ADV}}$$</p>
+        <p><strong>重要性</strong>：高换手策略（如短期反转）的收益可能被冲击成本完全吃掉。策略开发时必须将冲击成本纳入回测。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：Almgren-Chriss、平方根定律，与高换手策略为何「赚了寂寞」</summary>
+          <div class="expand-body">
+            <p><strong>① 市场冲击是什么、为什么是凹的（平方根）？</strong></p>
+            <p>市场冲击 = 你自己的交易<em>把价格推往不利方向</em>的成本。买得多，价格被你买高；卖得多，被你砸低。它和价差不同：价差是「过马路的固定过路费」，冲击是「你块头越大、过得越费劲」的拥挤成本。</p>
+            <p>实证发现冲击对订单大小是<strong>凹函数</strong>（平方根而非线性）：$\text{Impact}\propto\sqrt{V/ADV}$。直觉——市场有「弹性」，下单后流动性会陆续补充，所以单位冲击随规模递减；但仍随规模上升，因为你消耗了订单簿深度。把订单做成日成交量 1% 和 4%，冲击不是 4 倍而是约 2 倍（$\sqrt4=2$）。</p>
+            <p><strong>② Almgren-Chriss 模型的两难：冲击 vs 时机风险</strong></p>
+            <p>AC 模型的精髓不只是一个冲击公式，而是一个<strong>最优执行</strong>框架。当你要清掉一大笔仓位，面临权衡：</p>
+            <ul>
+              <li><strong>交易太快</strong> → 冲击成本大（短时间砸盘/扫货，价格被推得厉害）。</li>
+              <li><strong>交易太慢</strong> → 时机风险（timing risk）大：拖得越久，价格越可能因市场波动 $\sigma$ 自己漂走，给你带来不确定性。</li>
+            </ul>
+            <p>AC 用「执行成本均值 + $\lambda\times$ 执行成本方差」构造目标函数（$\lambda$ 是风险厌恶），解出一条最优交易轨迹（trading trajectory）——风险厌恶越高，越倾向快速完成（少冒时机风险）；越不在意波动，越铺开慢慢交易（省冲击）。这就是 VWAP/TWAP/IS 等执行算法的理论根。</p>
+            <p><strong>③ 为什么高换手策略「收益被冲击吃掉」——短期反转的例子</strong></p>
+            <p>短期反转策略：买过去一周<em>跌得最多</em>的、卖<em>涨得最多</em>的，赌它们反弹/回落。它在<strong>毛收益层面（paper）往往非常漂亮</strong>，IC 高、夏普高。但它有两个致命特征：</p>
+            <ol>
+              <li><strong>极高换手</strong>：信号每周（甚至每天）翻新，要不断调仓——年换手可达几十倍。每次调仓都付一次冲击+价差。</li>
+              <li><strong>专挑流动性差的票</strong>：反转收益常集中在小盘、低流动性股票（它们才会被错杀又反弹），而这些恰恰是 $ADV$ 小、冲击成本最高的票。</li>
+            </ol>
+            <p>组合起来：换手 × 冲击 × 标的流动性差 = 成本爆炸。一个毛年化 30% 的反转策略，扣掉双边价差和按平方根模型估的冲击后，<em>净收益可能归零甚至为负</em>。这就是为什么短期反转「学术上显著、实务上难做」——它的 Alpha 大部分是<strong>对承担流动性提供与交易成本的补偿</strong>，普通投资者赚不到。</p>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 回测必须扣成本，且成本随规模变</div>
+              <p>致命错误是用「固定 bps」一刀切估成本。冲击是规模的函数：你管 100 万时冲击可忽略，管 100 亿时同一策略可能完全做不动（容量 capacity 问题）。回测应当按 $V/ADV$ 动态估冲击，并据此评估策略的<strong>容量上限</strong>——很多策略的真正瓶颈不是 Alpha，而是「能装多少钱而不把自己的 Alpha 交易没」。</p>
+            </div>
+            <div class="callout deep">
+              <div class="callout-title">🎯 面试追问演练</div>
+              <p><strong>问</strong>：「两个策略毛夏普都是 2，一个年换手 2 倍、一个 50 倍，你怎么判断哪个更值得做？」</p>
+              <p><strong>答思路</strong>：几乎一定选低换手那个。① 净收益 = 毛收益 − 换手×单位成本，50 倍换手对成本极度敏感，毛夏普 2 扣完可能所剩无几甚至为负；2 倍换手的净夏普衰减小。② 高换手策略<em>容量小</em>——规模一大冲击成本非线性恶化，很快触顶。③ 高换手依赖快速、低成本的执行基础设施，门槛高、脆弱。④ 要具体算：估两者的 $V/ADV$ 和持仓流动性，代入平方根模型算净夏普和容量曲线。收尾：「毛收益骗人，净收益和容量才是真相——同样的毛夏普，低换手的策略几乎总是更值钱、更能放规模。」</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">✅ 本页小结（面试速记）</div>
+      <p>① <strong>Alpha 会衰减成 Beta</strong>，靠的是持续生产新信号；② 因子加工流水线「去极值→标准化→中性化」每步都有 WHY；③ <strong>$IR\approx IC\sqrt{BR}$</strong> 是广度战胜深度，但「独立」是关键漏洞；④ 共线性的解法是<em>重组信息</em>不是丢信息；⑤ MVO 是误差最大化器，缓解=约束/收缩/先验/少用 μ；⑥ 风险平价靠欧拉分解，隐含「等夏普」先验、需杠杆配债；⑦ 回测的敌人是前视与幸存者偏差；⑧ 多重检验下要 $t\gt3$ 与 Deflated Sharpe；⑨ 防过拟合的终极武器是<em>经济逻辑优先</em>；⑩ 净收益与容量才是真相，冲击成本是平方根定律。</p>
+    </div>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

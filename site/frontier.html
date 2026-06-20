@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>研究前沿 · Quant Research 知识库</title>
+  <meta name="description" content="量化研究的方法论前沿：时序预测、机器学习与资产定价、深度学习量价建模、因子工厂与 Alpha 挖掘，附奠基性论文。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="frontier">
+  <main class="content">
+    <h1>研究前沿</h1>
+    <p class="page-lead">方法论层面的前沿方向。和"策略方向"的区别是：<strong>策略方向告诉你赚什么钱，研究前沿告诉你怎么更高效地找到 Alpha。</strong>适合想了解前沿、准备研究岗的同学。</p>
+
+    <p>下面四个方向覆盖了当代量化研究的主要方法论脉络：从最经典的时序可预测性，到用机器学习重写资产定价，再到端到端深度学习与程序化因子挖掘。每个方向都附上奠基性论文和它要解决的核心难题。</p>
+
+    <div class="callout tip">
+      <div class="callout-title">✅ 阅读提示</div>
+      <p><span class="star">🌟</span> 表示经典推荐：里程碑式工作或绕不开的综述；📖 表示经典著作（书）。</p>
+    </div>
+
+    <h2 id="ts-forecast">时序预测</h2>
+    <div class="callout">
+      <p>和截面选股相对的另一个研究视角。截面是同一时间比较不同股票，时序是看单个资产自身的历史规律——过去涨了还会不会继续涨？波动放大了该不该减仓？时序动量（Time Series Momentum）是最经典的信号，本质上和趋势跟踪同源，但学术上更关注收益的可预测性和风险管理。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Moskowitz, Ooi &amp; Pedersen (2012). <em>Time Series Momentum.</em> JFE</li>
+      <li><span class="star">🌟</span> Lim, Zohren &amp; Roberts (2019). <em>Enhancing Time Series Momentum Strategies Using Deep Neural Networks.</em> QF</li>
+      <li>Goyal &amp; Jegadeesh (2018). <em>Cross-Sectional and Time-Series Tests of Return Predictability.</em> RFS</li>
+      <li>Baz et al. (2015). <em>Dissecting Investment Strategies in the Cross Section and Time Series.</em></li>
+      <li>📖 Tsay.《Analysis of Financial Time Series》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：时序预测的方法与挑战</summary>
+      <div class="expand-body">
+        <p><strong>这个方向研究什么？</strong>研究单个资产收益序列自身的可预测性：自相关、动量/反转、波动率聚集、风险的时变。它和截面研究互补——截面问"哪只股票更好"，时序问"这只资产现在该多还是该空、仓位该多大"。</p>
+        <p><strong>核心思想。</strong>时序动量（TSMOM）是标志性发现：一个资产过去 12 个月的收益符号，对它未来 1 个月的收益有显著预测力，且在几十个跨资产品种上普遍成立。把它和波动率目标结合（按 $w_t \propto \tfrac{\text{sign}(r_{t-12,t})}{\sigma_t}$ 调仓），就能得到一条夏普显著、与股市低相关的曲线。Lim-Zohren-Roberts 则用深度网络（如 LSTM）端到端地学习"什么时候该跟趋势、仓位多大"，把信号生成和仓位管理合并优化。</p>
+        <p><strong>为什么重要？</strong>它把"趋势跟踪"从经验法则提升为可检验的统计现象，并连接了风险管理（波动率目标、回撤控制）这一实务核心。</p>
+        <p><strong>关键挑战。</strong>金融时序非平稳（规律会漂移、会失效）、信噪比极低、样本有限（几十年数据里独立的市场周期没几个），极易过拟合。稳健的特征工程、波动率标准化和样本外验证比模型复杂度更重要。</p>
+      </div>
+    </details>
+
+    <h2 id="ml-pricing">机器学习与资产定价</h2>
+    <div class="callout">
+      <p>用机器学习重新审视资产定价问题。核心问题是：传统线性因子模型遗漏了哪些非线性关系？Gu, Kelly &amp; Xiu (2020) 是这个方向的里程碑，证明了神经网络和树模型在截面收益预测上显著优于线性模型。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Gu, Kelly &amp; Xiu (2020). <em>Empirical Asset Pricing via Machine Learning.</em> RFS</li>
+      <li><span class="star">🌟</span> Bryan Kelly, Pruitt &amp; Su (2019). <em>Characteristics Are Covariances: A Unified Model of Risk and Return.</em> JFE</li>
+      <li><span class="star">🌟</span> Bryan Kelly &amp; Xiu (2023). <em>Financial Machine Learning.</em> NBER</li>
+      <li>Feng, Giglio &amp; Xiu (2020). <em>Taming the Factor Zoo: A Test of New Factors.</em> JF</li>
+      <li>Freyberger, Neuhierl &amp; Weber (2020). <em>Dissecting Characteristics Nonparametrically.</em> RFS</li>
+      <li><span class="star">🌟</span> 📖 de Prado (2018).《Advances in Financial Machine Learning》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：机器学习与资产定价的里程碑与挑战</summary>
+      <div class="expand-body">
+        <p><strong>这个方向研究什么？</strong>用机器学习方法重写"什么决定了股票的预期收益"。传统资产定价假设收益是少数因子的<em>线性</em>函数；ML 资产定价放开这个假设，问：特征与收益之间有没有被线性模型漏掉的非线性和交互作用？</p>
+        <p><strong>里程碑：Gu-Kelly-Xiu (2020)。</strong>这篇是公认的奠基之作。它在统一框架下系统比较了 OLS、Lasso、随机森林、梯度提升树、神经网络等方法预测美股截面收益，结论清晰：树模型和神经网络的样本外表现显著优于线性模型，主要收益来自捕捉了<strong>非线性</strong>和<strong>变量交互</strong>；而且预测力大多来自少数几个"老朋友"特征（动量、流动性、波动率）。这把 ML 从"调参玩具"正式确立为资产定价的研究范式。</p>
+        <p><strong>相关脉络。</strong>Kelly-Pruitt-Su 的 IPCA 把"特征即载荷"做成可解释的隐因子模型；Feng-Giglio-Xiu 用机器学习+严谨统计来"驯服因子动物园"，检验一个新因子在控制已有因子后是否还有边际贡献；de Prado 的书则从实务角度讲样本权重、purged 交叉验证、回测过拟合等工程细节。</p>
+        <p><strong>为什么重要？</strong>它统一了"预测收益"（机器学习视角）和"解释收益"（资产定价视角），让研究者既能提升预测力，又能问"模型到底学到了什么经济结构"。</p>
+        <p><strong>关键挑战。</strong>极低信噪比下 ML 的过拟合风险被放大；可解释性（监管和投研都要求知道"为什么买"）；以及多重检验——下文因子工厂会专门讲。</p>
+      </div>
+    </details>
+
+    <h2 id="dl-modeling">深度学习与量价建模</h2>
+    <div class="callout">
+      <p>从手工因子到端到端学习。用 LSTM、Transformer、GNN 等网络结构直接从量价数据中提取信号，替代传统因子工程。挑战在于金融数据的低信噪比和非平稳性——过拟合是最大的敌人。</p>
+    </div>
+    <ul>
+      <li>Chen, Pelger &amp; Zhu (2024). <em>Deep Learning in Asset Pricing.</em> Management Science</li>
+      <li>Zhang, Zohren &amp; Roberts (2020). <em>Deep Learning for Portfolio Optimization.</em> JFE</li>
+      <li>Feng, He &amp; Polson (2018). <em>Deep Learning for Predicting Asset Returns.</em> arXiv</li>
+      <li>Xu et al. (2021). <em>Stock Movement Prediction from Tweets and Historical Prices.</em> ACL</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：深度学习量价建模的思路与瓶颈</summary>
+      <div class="expand-body">
+        <p><strong>这个方向研究什么？</strong>跳过人工设计因子，直接让神经网络从原始量价（开高低收量、订单簿、甚至文本/新闻）中端到端地学出预测信号。LSTM/Transformer 处理时序依赖，GNN 建模股票间的关联结构，注意力机制捕捉跨时间/跨资产的交互。</p>
+        <p><strong>核心思想。</strong>传统因子工程靠人把领域知识写成公式（如动量 = 过去收益），深度学习把"特征提取"也交给模型自动学习，理论上能发现人想不到的模式。Chen-Pelger-Zhu 进一步把无套利约束（资产定价的经济结构）嵌进神经网络的损失函数里，让模型既拟合数据又满足金融理论；Zhang-Zohren-Roberts 则直接以夏普比率为目标端到端优化组合权重，跳过"先预测收益再优化"的两步法。</p>
+        <p><strong>为什么重要？</strong>它代表了"用更强表达能力的模型 + 更多元的数据（另类数据、文本）"去逼近市场复杂性的方向，是工业界 Alpha 研究的主战场之一。</p>
+        <p><strong>关键挑战：过拟合是最大的敌人。</strong>金融数据信噪比极低（收益里绝大部分是噪音）、严重非平稳（市场规律随时间漂移）、有效样本少。深度网络参数多、容量大，特别容易"背下噪音"而非学到规律，导致样本内惊艳、样本外失效。所以这一方向的真正功夫在于正则化、严格的时序交叉验证（避免未来信息泄漏）、以及把经济先验作为约束来压缩搜索空间。</p>
+      </div>
+    </details>
+
+    <h2 id="factor-mining">因子工厂与 Alpha 挖掘</h2>
+    <div class="callout">
+      <p>从人工构造因子到程序化批量生成。WorldQuant 的 101 Alphas 开创了因子工厂模式——用表达式模板自动生成海量因子候选，再通过统计检验筛选。核心挑战是多重检验问题：测了一万个因子，总有几个"显著"的，但可能全是噪音。</p>
+    </div>
+    <ul>
+      <li>Kakushadze (2016). <em>101 Formulaic Alphas.</em> Wilmott</li>
+      <li>Harvey &amp; Liu (2020). <em>Lucky Factors.</em> JFE</li>
+      <li>Chordia, Goyal &amp; Saretto (2020). <em>Anomalies and False Rejections.</em> RFS</li>
+      <li>Chen &amp; Zimmermann (2022). <em>Open Source Cross-Sectional Asset Pricing.</em> Critical Finance Review</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：因子工厂的范式与多重检验陷阱</summary>
+      <div class="expand-body">
+        <p><strong>这个方向研究什么？</strong>把因子研究从"手工作坊"变成"流水线"：用算子（rank、delay、correlation、decay 等）和量价变量组合出表达式模板，程序化批量生成成千上万个候选因子，再用统计检验自动筛选出有效的。WorldQuant《101 Formulaic Alphas》是公开的范式样板。</p>
+        <p><strong>核心思想。</strong>既然单个因子超额在衰减，那就用"广度"取胜——海量生成、快速筛选、组合分散。配合机器学习还能做因子的非线性合成。</p>
+        <p><strong>关键挑战：多重检验（multiple testing）。</strong>这是这个方向的命门。如果你测了 10000 个因子，即使全是纯噪音，在 5% 显著性水平下也会有约 500 个"碰巧显著"。直接用 t &gt; 2 当门槛会捞出一大堆假阳性。Harvey-Liu《Lucky Factors》主张对因子检验做多重比较校正（提高 t 值门槛、用 bootstrap 控制 family-wise error 或 FDR）；Chordia-Goyal-Saretto 实证显示，在严格控制多重检验后，绝大多数已发表"异象"其实不显著。直觉上：$P(\text{至少一个假阳性}) = 1 - (1-\alpha)^{m}$，当检验次数 $m$ 很大时这个概率迅速逼近 1，所以门槛必须随检验数收紧。</p>
+        <p><strong>为什么重要？</strong>它既是工业界量产 Alpha 的主流工程范式，也是学术界反思"因子动物园"可信度的核心战场。Chen-Zimmermann 把上百个异象开源复现，推动了这一领域的可重复性。</p>
+        <p><strong>实务启示。</strong>评价一个挖掘出来的因子，不能只看回测夏普，要追问：经过多少次试错才挑出它？有没有经济逻辑？样本外、不同市场、不同时段是否稳健？否则很可能只是"幸运因子"。</p>
+      </div>
+    </details>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

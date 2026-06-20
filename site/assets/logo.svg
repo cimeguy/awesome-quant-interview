@@ -1,0 +1,11 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Quant Research Interview Notes Logo</title>
+  <desc id="desc">A minimal upward net value curve.</desc>
+  <path d="M18 70H80" stroke="#FDBA74" stroke-opacity="0.32" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18 70C28 64 33 58 40 60C48 62 51 48 58 49C67 50 70 36 82 28" stroke="#F97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M72 28H82V38" stroke="#F97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="70" r="3" fill="#F97316"/>
+  <circle cx="40" cy="60" r="3" fill="#F97316"/>
+  <circle cx="58" cy="49" r="3" fill="#F97316"/>
+  <circle cx="82" cy="28" r="3" fill="#F97316"/>
+</svg>

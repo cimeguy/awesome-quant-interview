@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>策略方向与经典论文 · Quant Research 知识库</title>
+  <meta name="description" content="按 CTA、趋势跟踪、截面选股、统计套利、市场中性、高频、做市、期权波动率等方向梳理量化策略的底层逻辑与奠基性论文。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="strategies">
+  <main class="content">
+    <h1>策略方向与经典论文</h1>
+    <p class="page-lead">按主流方向梳理量化策略：每个方向赚的是什么钱、奠基性论文有哪些、核心直觉和典型风险是什么。适合刚入门想"选方向"的大一新生，也适合准备求职面试的同学。</p>
+
+    <p>量化的本质就是在搞清楚什么是 <strong>Alpha</strong>——市场回报中无法被已知风险因子解释的那部分超额收益。不同方向的底层逻辑、数据频率、持仓周期差异巨大，<strong>选方向比选策略更重要</strong>。下面按主流方向整理了奠基性论文和经典著作，每篇都是这个领域绕不开的工作。</p>
+
+    <div class="callout tip">
+      <div class="callout-title">✅ 阅读提示</div>
+      <p><span class="star">🌟</span> 表示经典推荐：优先看、反复用，或者在对应方向里绕不开；📖 表示经典著作（书）。先抓住每个方向的"赚什么钱"，再去啃论文细节。</p>
+    </div>
+
+    <h2 id="cta">CTA / 管理期货</h2>
+    <div class="callout">
+      <p>在期货和外汇市场上做系统化趋势与动量。天然多空双向，对冲股市 Beta，08 年金融危机期间不少 CTA 基金逆势盈利，所以也叫"危机 Alpha"。国内 CTA 私募近年发展很快，是量化求职的热门方向之一。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Moskowitz, Ooi &amp; Pedersen (2012). <em>Time Series Momentum.</em> JFE</li>
+      <li><span class="star">🌟</span> Hurst, Ooi &amp; Pedersen (2017). <em>A Century of Evidence on Trend-Following Investing.</em> AQR</li>
+      <li>Fung &amp; Hsieh (2001). <em>The Risk in Hedge Fund Strategies: Theory and Evidence from Trend Followers.</em> RFS</li>
+      <li>Hamill, Rattray &amp; Van Hemert (2016). <em>Trend Following: Equity and Bond Crisis Alpha.</em> AQR</li>
+      <li>Baltas &amp; Kosowski (2013). <em>Momentum Strategies in Futures Markets and Trend-Following Funds.</em></li>
+      <li>Levine &amp; Pedersen (2016). <em>Which Trend Is Your Friend?</em> FAJ</li>
+      <li>📖 Perry Kaufman.《Trading Systems and Methods》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：CTA / 管理期货的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>CTA 赚的是"趋势溢价"——价格一旦开始朝某个方向走，往往会持续更久。它在全球几十个期货品种（股指、国债、商品、外汇）上同时做多上涨品种、做空下跌品种，靠分散化把单个品种的噪音抹平，留下一个稳定的趋势信号。</p>
+        <p><strong>核心直觉。</strong>市场不是瞬间消化信息的：投资者有惯性（慢慢加仓）、有羊群效应、有风险管理触发的被动买卖。这些行为让价格呈现自相关，于是"过去涨的继续涨"在统计上成立。时序动量（Time Series Momentum）就是把这个直觉做成可交易的信号。</p>
+        <p><strong>什么时候有效 / 失效？</strong>趋势明显、波动有方向的市场（如 2008 危机、2022 加息周期）CTA 表现亮眼，这就是"危机 Alpha"的来源——股票大跌时商品/国债往往出现强趋势。反之，在震荡无方向的市场（如 2011–2019 多数时间），CTA 会被反复的假突破"锯"掉收益，进入长期回撤。</p>
+        <p><strong>典型风险。</strong>胜率低（30%–40%），靠盈亏比赚钱，必须忍受连续小亏后等待大趋势。趋势反转时回吐利润快；品种相关性在极端行情下会同时同向，分散化失效。</p>
+        <p><strong>国内现状。</strong>商品期货 CTA 是国内私募的重要产品线，门槛相对低、容量受限于期货市场流动性。近年从纯趋势向"趋势+截面+基本面"多因子融合演进，纯中低频趋势的超额在收窄。</p>
+      </div>
+    </details>
+
+    <h2 id="trend">中低频趋势跟踪</h2>
+    <div class="callout">
+      <p>和 CTA 高度重叠，但更纯粹地聚焦中低频方向性信号。胜率通常只有 30%-40%，靠盈亏比赚钱。核心在于跟随纪律：趋势来了跟上，反转了止损走人；预测能力反而不是重点。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Jegadeesh &amp; Titman (1993). <em>Returns to Buying Winners and Selling Losers.</em> JF</li>
+      <li><span class="star">🌟</span> Asness, Moskowitz &amp; Pedersen (2013). <em>Value and Momentum Everywhere.</em> JF</li>
+      <li>Lempérière et al. (2014). <em>Two Centuries of Trend Following.</em> JIS</li>
+      <li>Faber (2007). <em>A Quantitative Approach to Tactical Asset Allocation.</em> JWM</li>
+      <li>Baz et al. (2015). <em>Dissecting Investment Strategies in the Cross Section and Time Series.</em></li>
+      <li>Babu et al. (2020). <em>You Can't Always Trend When You Want.</em> JPM</li>
+      <li>📖 Andreas Clenow.《Following the Trend》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：中低频趋势跟踪的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>和 CTA 同源，赚的还是趋势溢价，但持仓周期更长（周到月级），换手低、交易成本占比小，更接近"资产配置式"的方向性投资。</p>
+        <p><strong>核心直觉。</strong>关键不是"预测得准"，而是"纪律执行"：让利润奔跑、把亏损砍掉。一套简单的移动平均突破系统，只要严格止损、控制仓位，长期就能捕捉到少数几波大行情贡献的绝大部分收益。这就是为什么 Clenow 强调"系统比预测重要"。</p>
+        <p><strong>什么时候有效 / 失效？</strong>有效期需要持续、单边的行情；失效在于长期横盘震荡——这时频繁的止损会持续磨损本金（whipsaw）。Babu et al.《You Can't Always Trend When You Want》正是讲趋势策略在低波动、强均值回归环境下的困境。</p>
+        <p><strong>典型风险。</strong>低胜率带来的心理煎熬和回撤持续时间长；参数过拟合（在历史上挑出"最优均线周期"往往是数据挖掘）；趋势拐点处的滑点。</p>
+        <p><strong>国内现状。</strong>纯趋势跟踪在国内更多作为多策略组合的一个 sleeve，单独跑容易遇到长期回撤，机构通常叠加波动率目标、品种分散和风控来平滑曲线。</p>
+      </div>
+    </details>
+
+    <h2 id="cross-section">截面选股</h2>
+    <div class="callout">
+      <p>量化选股是国内公募和私募常见的策略方向之一。核心思路是在截面上（同一时间点比较股票）寻找能预测未来收益的因子，构建多空或纯多头组合。从 Fama-French 三因子到现在的数百个因子，学术界和业界一直在争论：哪些因子代表了有效超额收益，哪些只是数据挖掘？</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Fama &amp; French (1993). <em>Common Risk Factors in the Returns on Stocks and Bonds.</em> JFE</li>
+      <li><span class="star">🌟</span> Fama &amp; French (2015). <em>A Five-Factor Asset Pricing Model.</em> JFE</li>
+      <li><span class="star">🌟</span> Harvey, Liu &amp; Zhu (2016). <em>…and the Cross-Section of Expected Returns.</em> RFS</li>
+      <li>Hou, Xue &amp; Zhang (2015). <em>Digesting Anomalies: An Investment Approach.</em> RFS</li>
+      <li>Novy-Marx (2013). <em>The Other Side of Value: The Gross Profitability Premium.</em> JFE</li>
+      <li>McLean &amp; Pontiff (2016). <em>Does Academic Research Destroy Stock Return Predictability?</em> JF</li>
+      <li>📖 Chincarini &amp; Kim.《Quantitative Equity Portfolio Management》</li>
+      <li><span class="star">🌟</span> 📖 石川 等.《因子投资：方法与实践》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：截面选股的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是"因子溢价"——某些可观测特征（估值便宜、近期动量强、盈利质量高、市值小）系统性地对应更高的未来收益。截面选股就是在同一时间点给全市场股票按这些特征打分，做多高分股、做空（或低配）低分股。</p>
+        <p><strong>核心直觉。</strong>一支股票的预期收益可以分解为：$E[r_i] = \beta_i \cdot \lambda_{\text{market}} + \sum_k b_{ik}\,\lambda_k$，其中 $\lambda_k$ 是各因子的风险溢价。Fama-French 把"市场之外还有什么系统性来源"做成了可检验的模型，从三因子到五因子，本质都是在回答这个分解里该放哪些 $k$。</p>
+        <p><strong>什么时候有效 / 失效？</strong>因子有效来自两类解释：风险补偿（承担了别人不愿承担的风险）或行为偏差（市场的系统性误定价）。一旦某因子被学术论文公开、被业界拥挤交易，超额就会衰减——McLean &amp; Pontiff 实证发现因子在发表后收益平均下降约一半。Harvey-Liu-Zhu 则警告"因子动物园"里很多因子是多重检验下的假阳性。</p>
+        <p><strong>典型风险。</strong>因子拥挤与同质化（大家都买同样的股票，回撤时一起踩踏）；风格切换（价值/成长轮动）；数据挖掘导致的样本外失效。</p>
+        <p><strong>国内现状。</strong>A 股因子有效性历史上强于成熟市场（散户多、定价效率低），但近年随着量化规模扩张快速衰减；监管对融券做空的限制使纯多头/指数增强成为主流形态。</p>
+      </div>
+    </details>
+
+    <h2 id="fundamental">基本面量化</h2>
+    <div class="callout">
+      <p>用财报、估值、盈利质量、分析师预期等低频基本面数据构建 Alpha。它和截面选股关系很近，但更强调财务报表、企业经营质量和估值修复逻辑；优点是经济含义清楚，难点是数据更新慢、会计口径复杂、拥挤后衰减明显。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Piotroski (2000). <em>Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers.</em> JAR</li>
+      <li><span class="star">🌟</span> Sloan (1996). <em>Do Stock Prices Fully Reflect Information in Accruals and Cash Flows about Future Earnings?</em> TAR</li>
+      <li>Ou &amp; Penman (1989). <em>Financial Statement Analysis and the Prediction of Stock Returns.</em> JAE</li>
+      <li>Lakonishok, Shleifer &amp; Vishny (1994). <em>Contrarian Investment, Extrapolation, and Risk.</em> JF</li>
+      <li>Chan, Lakonishok &amp; Sougiannis (2001). <em>The Stock Market Valuation of Research and Development Expenditures.</em> JF</li>
+      <li>📖 Penman.《Financial Statement Analysis and Security Valuation》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：基本面量化的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是市场对企业财务质量的"慢反应"。比如 Piotroski 用 9 项财务健康指标（F-Score）筛选出账面便宜但基本面在改善的公司；Sloan 发现应计利润高的公司未来收益更差（市场没充分区分"现金盈利"和"账面盈利"）。这些都是基于财报的可预测性。</p>
+        <p><strong>核心直觉。</strong>财务报表里藏着关于企业未来的真实信息，但分析这些信息需要专业能力且更新慢，市场常常反应不足或被会计处理误导。量化把这些会计逻辑写成规则，规模化地应用到全市场。</p>
+        <p><strong>什么时候有效 / 失效？</strong>在信息披露不充分、散户主导的市场更有效；在被充分研究、机构定价的大盘股上空间小。财报造假、会计准则变更、行业商业模式剧变（如轻资产/互联网企业）会让传统指标失真。</p>
+        <p><strong>典型风险。</strong>数据频率低（季度财报），信号稀疏、换手低但反应慢；价值陷阱（便宜是因为基本面真的在恶化）；会计口径跨行业/跨国不可比。</p>
+        <p><strong>国内现状。</strong>A 股财报质量参差、披露时滞，基本面因子常与量价、分析师预期因子混合使用；公募基金的"基本面+量化"产品是这一方向的典型落地。</p>
+      </div>
+    </details>
+
+    <h2 id="statarb">统计套利</h2>
+    <div class="callout">
+      <p>利用资产间的统计关系（协整、相关性、因子结构），在偏离时建仓、回归时平仓。市场中性，不赌方向。配对交易是最经典的入门，但现代统计套利早已进化到 PCA 驱动的篮子交易和机器学习信号。需要警惕相关性崩溃的尾部风险。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Engle &amp; Granger (1987). <em>Co-integration and Error Correction.</em> Econometrica</li>
+      <li><span class="star">🌟</span> Gatev, Goetzmann &amp; Rouwenhorst (2006). <em>Pairs Trading: Performance of a Relative-Value Arbitrage Rule.</em> RFS</li>
+      <li>Avellaneda &amp; Lee (2010). <em>Statistical Arbitrage in the US Equities Market.</em> QF</li>
+      <li>Krauss (2017). <em>Statistical Arbitrage Pairs Trading Strategies: Review and Outlook.</em> JES</li>
+      <li>📖 Pole (2007).《Statistical Arbitrage》</li>
+      <li>📖 Vidyamurthy (2004).《Pairs Trading: Quantitative Methods and Analysis》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：统计套利的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是"价格回归"的钱。两个（或一篮子）经济上相关的资产，其价差应该围绕一个均衡水平波动；当价差被短期冲击拉偏，做多被低估的、做空被高估的，等价差回归就平仓获利。整个组合对市场方向中性。</p>
+        <p><strong>核心直觉。</strong>协整（Engle-Granger）给了数学基础：两个各自非平稳（随机游走）的价格序列，如果存在一个线性组合是平稳的，那这个组合（价差）就有均值回归性质，可以建模成 $dX_t = -\theta(X_t - \mu)\,dt + \sigma\,dW_t$（OU 过程），偏离均值越远，回归动力越强。</p>
+        <p><strong>什么时候有效 / 失效？</strong>在相关结构稳定、有大量散户噪音交易制造短期错配时有效。失效发生在"结构性断裂"——配对关系因基本面变化（并购、退市、行业政策）永久改变，价差不再回归，这时"被低估"的腿可能继续跌。1998 年 LTCM 就是相关性在危机中同时崩溃的极端案例。</p>
+        <p><strong>典型风险。</strong>尾部相关性崩溃；杠杆放大（价差通常很小，要靠杠杆放收益，回撤也被放大）；拥挤导致回归速度变慢、空间变窄。</p>
+        <p><strong>国内现状。</strong>受融券成本和券源限制，纯股票配对做空在 A 股较难；更多以 ETF 套利、期现套利、跨品种价差、可转债等形式存在。</p>
+      </div>
+    </details>
+
+    <h2 id="market-neutral">市场中性 / 股票对冲</h2>
+    <div class="callout">
+      <p>国内量化私募最主流的产品形态。做法是：用因子模型或机器学习选出一篮子 Alpha 股票做多，同时用股指期货（IF/IC/IM）做空对冲市场 Beta，只赚选股能力带来的超额收益。理论上不受大盘涨跌影响，但实际面临基差成本、风格暴露、极端行情下的 Alpha 回撤等问题。2024 年 2 月的量化踩踏事件就是这个策略集中度过高的后果。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Black &amp; Litterman (1992). <em>Global Portfolio Optimization.</em> FAJ</li>
+      <li><span class="star">🌟</span> Grinold &amp; Kahn (2000). <em>Active Portfolio Management.</em> McGraw-Hill</li>
+      <li>Jacobs &amp; Levy (1993). <em>Long-Short Equity Investing.</em> JPM</li>
+      <li>Asness, Frazzini &amp; Pedersen (2019). <em>Quality Minus Junk.</em> RAP</li>
+      <li>Frazzini &amp; Pedersen (2014). <em>Betting Against Beta.</em> JFE</li>
+      <li>📖 Qian, Hua &amp; Sorensen.《Quantitative Equity Portfolio Management》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：市场中性 / 股票对冲的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是纯粹的"选股能力"（Alpha），剥离掉大盘涨跌（Beta）的影响。多头是一篮子被模型看好的股票，空头用股指期货对冲掉市场风险，组合的净 Beta 接近 0，盈亏只取决于多头组合能否跑赢对冲基准。</p>
+        <p><strong>核心直觉。</strong>Grinold-Kahn 的"主动管理基本定律"概括了一切：$IR \approx IC \cdot \sqrt{BR}$——信息比率约等于预测准确度（IC）乘以独立下注次数（广度 BR）的平方根。量化对冲赢在"广度"：单只股票预测得不算特别准（IC 很低），但同时在几千只股票上下注，累积出稳定的信息比率。Black-Litterman 则解决如何把这些观点稳健地转成组合权重。</p>
+        <p><strong>什么时候有效 / 失效？</strong>Alpha 因子有效且对冲工具充足时表现平稳。失效来自：① 对冲不完美——只能对冲市场 Beta，残余的风格/行业暴露在风格切换时爆发；② 基差成本——股指期货长期贴水（尤其 IC/IM），做空对冲要持续付出"贴水成本"；③ 拥挤踩踏——大家持仓高度相似时，一旦集体平仓会形成负反馈（2024 年 2 月小微盘踩踏即此）。</p>
+        <p><strong>典型风险。</strong>基差波动、风格暴露、对冲端保证金管理、极端行情下 Alpha 与对冲同时不利的"双杀"。</p>
+        <p><strong>国内现状。</strong>这是国内量化私募曾经最主流的产品，但受制于股指期货容量、贴水成本和监管，近两年部分资金转向指数增强（保留 Beta、只用一半对冲或不对冲）。</p>
+      </div>
+    </details>
+
+    <h2 id="hft">高频交易（QR 延伸阅读）</h2>
+    <div class="callout note">
+      <div class="callout-title">📎 关于本节</div>
+      <p>毫秒甚至微秒级持仓，通过速度优势和微观结构信息赚取微小但高频的利润。基础设施（co-location、FPGA、网络延迟）是重要壁垒，策略容量有限但利润率极高。对 Quant Research 来说，微观结构论文更适合作为进阶背景，不是本仓库主线。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Kyle (1985). <em>Continuous Auctions and Insider Trading.</em> Econometrica</li>
+      <li><span class="star">🌟</span> Glosten &amp; Milgrom (1985). <em>Bid, Ask and Transaction Prices in a Specialist Market.</em> JFE</li>
+      <li><span class="star">🌟</span> Avellaneda &amp; Stoikov (2008). <em>High-Frequency Trading in a Limit Order Book.</em> QF</li>
+      <li>Cont, Stoikov &amp; Talreja (2010). <em>A Stochastic Model for Order Book Dynamics.</em> OR</li>
+      <li>Bouchaud, Farmer &amp; Lillo (2009). <em>How Markets Slowly Digest Changes in Supply and Demand.</em></li>
+      <li>Menkveld (2013). <em>High Frequency Trading and the New Market Makers.</em> JFM</li>
+      <li>📖 Cartea, Jaimungal &amp; Penalva (2015).《Algorithmic and High-Frequency Trading》</li>
+      <li>📖 Hasbrouck (2007).《Empirical Market Microstructure》</li>
+      <li>📖 Ernest Chan.《Quantitative Trading》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：高频交易的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是"速度"和"微观结构信息"的钱：抢在别人之前看到订单流变化、捕捉转瞬即逝的微小错价、做市赚价差、或在交易所之间套利。单笔利润极薄，靠极高频次和极高胜率累积。</p>
+        <p><strong>核心直觉。</strong>价格不是凭空跳动的，它由订单簿的供需动态决定。Kyle 模型刻画了知情交易者如何在不暴露自己的前提下交易、价格如何随订单流线性更新（Kyle's lambda 衡量市场深度）；Glosten-Milgrom 解释了 bid-ask spread 本质是做市商对"逆向选择"的补偿。理解这些，才能从订单流里提取出短期价格预测。</p>
+        <p><strong>什么时候有效 / 失效？</strong>在流动性充足、订单簿信息丰富的市场有效。失效在于：竞争对手更快（速度是零和的军备竞赛）、交易所规则变化、突发新闻导致订单簿瞬间失稳。</p>
+        <p><strong>典型风险。</strong>技术故障（一行 bug 可能瞬间巨亏，参考 Knight Capital）；监管风险；容量极其有限（赚得快但装不下大资金）。</p>
+        <p><strong>国内现状 &amp; 对 QR 的意义。</strong>国内高频受交易所撤单率、报撤比、最小持仓时间等规则约束较多。对 Quant Research 求职者而言，微观结构知识更多是"加分背景"，理解订单流/冲击成本有助于做中低频策略的执行优化，但不必把它当主攻方向。</p>
+      </div>
+    </details>
+
+    <h2 id="market-making">做市（QR 延伸阅读）</h2>
+    <div class="callout note">
+      <div class="callout-title">📎 关于本节</div>
+      <p>在买卖两端持续报价，赚取 bid-ask spread。听起来简单，难点在于逆向选择——和知情交易者成交就是亏钱。Avellaneda-Stoikov 模型是理解做市问题的经典起点，但在本仓库中只作为 Quant Research 微观结构延伸阅读。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Ho &amp; Stoll (1981). <em>Optimal Dealer Pricing Under Transactions and Return Uncertainty.</em> JFE</li>
+      <li><span class="star">🌟</span> Guéant, Lehalle &amp; Fernandez-Tapia (2013). <em>Dealing with the Inventory Risk.</em> MFE</li>
+      <li>Grossman &amp; Miller (1988). <em>Liquidity and Market Structure.</em> JF</li>
+      <li>Stoikov (2018). <em>The Micro-Price: A High-Frequency Estimator of Future Prices.</em> QF</li>
+      <li>Glosten &amp; Harris (1988). <em>Estimating the Components of the Bid-Ask Spread.</em> JFE</li>
+      <li>Amihud &amp; Mendelson (1980). <em>Dealership Market: Market-Making with Inventory.</em> JFE</li>
+      <li>Guilbaud &amp; Pham (2013). <em>Optimal High-Frequency Trading with Limit and Market Orders.</em> QF</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：做市的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是 bid-ask spread——做市商同时挂买单和卖单，被动等待别人来成交，低买高卖赚取价差，同时为市场提供流动性。</p>
+        <p><strong>核心直觉。</strong>做市的核心矛盾有两个：① <strong>逆向选择</strong>——和"知情交易者"成交注定吃亏（别人知道价格要涨才来买你的卖单），所以价差里要包含对这种风险的补偿；② <strong>库存风险</strong>——成交会让你被动持有头寸，价格波动带来风险。Avellaneda-Stoikov 把它建成一个最优控制问题：围绕一个考虑库存偏移的"保留价格"对称报价，库存越偏离 0，就把报价整体往能减仓的方向移动，用价差和库存惩罚之间的权衡求解最优买卖报价。</p>
+        <p><strong>什么时候有效 / 失效？</strong>在双向订单流均衡、波动适中时稳定盈利。失效在单边行情——所有人都往一个方向打，做市商不断接到"烫手"的库存，价格持续不利，价差利润远不够覆盖库存亏损。</p>
+        <p><strong>典型风险。</strong>逆向选择、库存爆仓、闪崩时流动性枯竭（做市商撤单加剧崩盘）。</p>
+        <p><strong>对 QR 的意义。</strong>和高频类似，做市更偏工程与微观结构。对研究岗，Avellaneda-Stoikov 和 micro-price 的思想（如何从订单簿估计"公允价"）可迁移到执行算法和短周期信号，作为延伸阅读价值很高。</p>
+      </div>
+    </details>
+
+    <h2 id="options">期权与波动率</h2>
+    <div class="callout">
+      <p>不赌涨跌，赌波动率。利用期权的非线性特性和隐含波动率的错误定价获利。策略包括波动率套利、gamma scalping、dispersion trading、尾部对冲等。Black-Scholes 是起点，但真正赚钱靠的是对波动率曲面的理解——Gatheral 的书是业界常用参考，粗糙波动率（Rough Vol）是近年重要理论方向。</p>
+    </div>
+    <ul>
+      <li><span class="star">🌟</span> Black &amp; Scholes (1973). <em>The Pricing of Options and Corporate Liabilities.</em> JPE</li>
+      <li><span class="star">🌟</span> Heston (1993). <em>A Closed-Form Solution for Options with Stochastic Volatility.</em> RFS</li>
+      <li><span class="star">🌟</span> Gatheral, Jaisson &amp; Rosenbaum (2018). <em>Volatility Is Rough.</em> QF</li>
+      <li>Dupire (1994). <em>Pricing with a Smile.</em> Risk</li>
+      <li>Carr &amp; Madan (1999). <em>Option Valuation Using the Fast Fourier Transform.</em> JCF</li>
+      <li>Bates (1996). <em>Jumps and Stochastic Volatility.</em> RFS</li>
+      <li>Bergomi (2005). <em>Smile Dynamics.</em> Risk</li>
+      <li>📖 Gatheral (2006).《The Volatility Surface: A Practitioner's Guide》</li>
+      <li>📖 Taleb (1997).《Dynamic Hedging: Managing Vanilla and Exotic Options》</li>
+    </ul>
+    <details class="expand">
+      <summary>🔬 深度拓展：期权与波动率的底层逻辑</summary>
+      <div class="expand-body">
+        <p><strong>这个方向赚什么钱？</strong>赚的是"波动率"而不是"方向"。期权价格隐含了市场对未来波动的预期（隐含波动率 IV），如果你判断实际波动（实现波动率 RV）会和 IV 不同，就可以做多/做空波动率获利。典型如"卖出被高估的 IV、动态对冲掉方向风险，赚取 IV 与 RV 的差"。</p>
+        <p><strong>核心直觉。</strong>Black-Scholes 给了无套利定价的起点，但它假设波动率恒定——现实里不同行权价、不同到期的隐含波动率构成一张起伏的"波动率曲面"（出现 smile/skew）。真正的 Alpha 来自理解这张曲面：Heston 用随机波动率解释 smile，Dupire 用局部波动率拟合曲面，Gatheral《Volatility Surface》是业界拟合与交易曲面的标准参考。gamma scalping 的本质是：持有期权多头时，通过不断对标的做反向再平衡，把价格波动"兑现"成收益，盈亏正比于 $\tfrac{1}{2}\,\Gamma\,(\Delta S)^2$ 与 theta 损耗之差。</p>
+        <p><strong>什么时候有效 / 失效？</strong>当 IV 与 RV 出现可识别的系统性偏差（如 IV 长期高于 RV 的"波动率风险溢价"）时有效。失效在波动率体制突变——卖波动率策略在平静期稳赚小钱，但一次尾部事件（如 2018 年 2 月 Volmageddon）就可能抹掉数年利润，这就是 Taleb 反复强调的"卖波动率=捡硬币于压路机前"。</p>
+        <p><strong>典型风险。</strong>非线性带来的尾部风险（短 gamma 时损失加速）；模型风险（曲面建模错误）；流动性与对冲成本。粗糙波动率（Rough Vol）是近年用分数布朗运动更好刻画波动率短期行为的重要理论进展。</p>
+        <p><strong>国内现状。</strong>国内期权市场（50ETF/300ETF 期权、商品期权、个股不可做空等限制）流动性和品种仍在扩张，波动率交易门槛高、对建模和风控要求高，是相对小众但技术密集的方向。</p>
+      </div>
+    </details>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

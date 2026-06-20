@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>编程 (Python / C++) · Quant Research 知识库</title>
+  <meta name="description" content="Quant Research 编程八股：Python 数据结构与底层哈希、深浅拷贝与视图、向量化与 GIL、装饰器与生成器，C++ 指针/虚函数/移动语义/STL/模板元编程，以及 NumPy 广播与滚动窗口。含难点深度拓展与面试追问演练。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="programming">
+  <main class="content">
+    <h1>编程 (Python / C++)</h1>
+    <p class="page-lead">这一页覆盖 Quant Research 面试里最常被追问的编程八股：Python 的数据结构底层、内存模型、向量化与并发，以及 C++ 的内存语义、多态与零开销抽象，最后落到 NumPy 数值计算。每题都配「🔬 深度拓展」——讲清楚底层怎么跑、为什么快/慢、容易踩的坑，并附一段「面试追问演练」。适合大一新生打地基，也适合求职者临阵磨枪。</p>
+
+    <h2 id="python-基础与数据处理">Python 基础与数据处理 (Q15–Q19)</h2>
+
+    <!-- ===================== Q15 ===================== -->
+    <div class="qa-card" id="q15">
+      <div class="qa-q"><span class="qa-id">Q15</span>Python 中 list、tuple、dict、set 的区别与适用场景？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>类型</th><th>可变性</th><th>有序性</th><th>查找复杂度</th><th>量化场景</th></tr></thead>
+          <tbody>
+            <tr><td>list</td><td>可变</td><td>有序</td><td>$O(n)$</td><td>时间序列存储、策略信号列表</td></tr>
+            <tr><td>tuple</td><td>不可变</td><td>有序</td><td>$O(n)$</td><td>作为 dict 的 key（如 (date, ticker)）、函数多返回值</td></tr>
+            <tr><td>dict</td><td>可变</td><td>有序(3.7+)</td><td>$O(1)$</td><td>ticker→price 映射、参数配置</td></tr>
+            <tr><td>set</td><td>可变</td><td>无序</td><td>$O(1)$</td><td>股票池去重、集合运算（交集并集求共同持仓）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>面试高频追问</strong>：dict 的底层实现是哈希表，冲突解决用开放寻址法（CPython）；set 也是哈希表。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：哈希表底层、冲突解决与 $O(1)$ 均摊的来历</summary>
+          <div class="expand-body">
+            <p><strong>哈希表是什么。</strong>dict/set 本质是一个数组（桶 buckets），插入时先算 <code>h = hash(key)</code>，再用 <code>h % capacity</code> 映射到某个桶。读写都靠这一步直接定位，所以平均 $O(1)$，而 list 的 <code>x in lst</code> 要逐个比较，是 $O(n)$。这就是「股票池去重用 set 而不是 list」的根本原因。</p>
+
+            <p><strong>冲突解决：两大流派。</strong></p>
+            <table>
+              <thead><tr><th>方法</th><th>思想</th><th>代表</th></tr></thead>
+              <tbody>
+                <tr><td>链地址法 (chaining)</td><td>每个桶挂一个链表/数组，冲突的 key 串起来</td><td>Java HashMap、C++ <code>unordered_map</code></td></tr>
+                <tr><td>开放寻址 (open addressing)</td><td>冲突了就按探测序列往后找下一个空桶</td><td>CPython 的 dict/set</td></tr>
+              </tbody>
+            </table>
+            <p>CPython 用开放寻址 + 伪随机探测。冲突时下一个槽位由这段经典逻辑决定（概念版）：</p>
+            <pre><code>perturb = hash
+j = hash &amp; mask                 # 初始槽位
+while slot[j] is occupied and key mismatch:
+    perturb &gt;&gt;= 5
+    j = (5 * j + 1 + perturb) &amp; mask   # 探测下一个槽
+# 既用低位也逐步混入高位，避免聚集成团（clustering）</code></pre>
+            <p>开放寻址对缓存友好（数据都在一块连续数组里），但要求<strong>负载因子</strong>不能太高。CPython 在装填到约 2/3 时触发 <em>resize</em>（扩容并 rehash），保证探测链不会太长——这正是「均摊 $O(1)$」的代价：偶尔一次插入要 $O(n)$ 搬迁，但摊到每次操作仍是常数。</p>
+
+            <p><strong>为什么 key 必须可哈希（hashable）。</strong>哈希表要求 key 的 <code>hash()</code> 稳定、且相等的 key 哈希值相同（<code>a == b ⇒ hash(a) == hash(b)</code>）。list 可变、内容一变哈希就失效，所以 list 不能当 key；tuple 不可变所以可以。这就是量化里常用 <code>(date, ticker)</code> tuple 当复合 key 的原因。</p>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 坑：哈希值可被定制，会破坏不变量</div>
+              <p>如果你自定义类只重写了 <code>__eq__</code> 没重写 <code>__hash__</code>，两个「相等」的对象可能落到不同桶里，set 去重失效。规则：要么都重写，要么把对象设计成不可变。</p>
+            </div>
+
+            <p><strong>Python 3.7+ dict 为什么有序。</strong>CPython 用了「紧凑 dict」：一个按插入顺序排列的稠密 entries 数组 + 一个只存索引的稀疏哈希表。遍历走 entries 数组所以保序，查找仍走哈希表所以 $O(1)$，还顺带省内存。</p>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「dict 的 $O(1)$ 是最坏情况吗？什么时候会退化？」</p>
+            <p><strong>理想回答：</strong>不是最坏情况，是<em>均摊 + 平均</em>。最坏情况下所有 key 哈希到同一探测链，退化成 $O(n)$。现实中如果攻击者构造大量哈希碰撞的 key（哈希洪水攻击），就能把 dict 拖慢——CPython 对 str 的哈希加了随机 seed（<code>PYTHONHASHSEED</code>）来缓解。量化里更现实的退化是「负载因子太高没及时扩容」或「自定义对象哈希函数写得烂、分布不均」。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q16 ===================== -->
+    <div class="qa-card" id="q16">
+      <div class="qa-q"><span class="qa-id">Q16</span>深拷贝和浅拷贝的区别？在量化中踩坑的例子？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <ul>
+          <li><strong>浅拷贝</strong>（<code>copy.copy()</code> 或 <code>list.copy()</code>）：创建新对象，但内部元素仍引用原对象。</li>
+          <li><strong>深拷贝</strong>（<code>copy.deepcopy()</code>）：递归复制所有层级的对象。</li>
+        </ul>
+        <p><strong>量化踩坑：</strong></p>
+        <pre><code># 危险：portfolio_b 和 portfolio_a 共享内部列表
+portfolio_a = {'holdings': [{'ticker': 'AAPL', 'weight': 0.5}]}
+portfolio_b = portfolio_a.copy()       # 浅拷贝
+portfolio_b['holdings'][0]['weight'] = 0.3  # portfolio_a 也被修改了！</code></pre>
+        <p>回测中修改了一个策略的持仓，另一个策略的持仓也被污染——这类 bug 极其隐蔽。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：引用模型、numpy/pandas 的 view vs copy 与一次真实的回测污染 bug</summary>
+          <div class="expand-body">
+            <p><strong>先建立心智模型。</strong>Python 变量是「贴在对象上的标签」。<code>b = a</code> 不复制任何东西，只是再贴一张标签到同一个对象。浅拷贝复制「最外层容器」，但容器里装的还是指向旧对象的引用；深拷贝沿着引用图递归到底，全部重建。</p>
+            <pre><code>import copy
+a = [[1, 2], [3, 4]]
+b = copy.copy(a)        # 浅：b 是新 list，但 b[0] is a[0] -&gt; True
+c = copy.deepcopy(a)    # 深：c[0] is a[0] -&gt; False
+b[0].append(99)         # a 也变了，因为共享内层 list
+print(a)                # [[1, 2, 99], [3, 4]]</code></pre>
+
+            <p><strong>numpy/pandas 里同样的陷阱，但名字叫 view（视图）。</strong>切片一个 ndarray 默认返回 <em>view</em>——和原数组共享同一块内存缓冲区，改 view 等于改原数组。这在性能上是优点（零拷贝），但当成「副本」用就是 bug。</p>
+            <pre><code>import numpy as np
+prices = np.arange(10.0)
+window = prices[2:5]     # view，不是副本
+window[:] = 0            # prices[2:5] 也被清零了！
+print(prices)            # [0 1 0 0 0 5 6 7 8 9]
+
+safe = prices[2:5].copy()  # 显式 copy 才安全
+# 判断是否共享内存：
+np.shares_memory(prices, window)  # True
+np.shares_memory(prices, safe)    # False</code></pre>
+
+            <div class="callout note">
+              <div class="callout-title">🧪 一次真实的回测污染 bug 走查</div>
+              <p>场景：你有一个基准持仓 <code>base_weights</code>（ndarray），跑参数网格搜索，每组参数在基准上叠加一点扰动后回测。</p>
+              <pre><code># ❌ Bug 版本
+base_weights = np.array([0.2, 0.3, 0.5])
+results = []
+for shock in [0.01, 0.02, 0.03]:
+    w = base_weights              # 只是别名！没复制
+    w[0] += shock                 # 直接改了 base_weights
+    results.append(backtest(w))
+# 第 2、3 轮的 base_weights 已被前面累计污染，
+# 实际跑的扰动是 0.01, 0.03(=0.01+0.02), 0.06(=...)，全错。</code></pre>
+              <pre><code># ✅ 修复：每轮独立副本
+for shock in [0.01, 0.02, 0.03]:
+    w = base_weights.copy()
+    w[0] += shock
+    results.append(backtest(w))</code></pre>
+              <p>这种 bug 的可怕之处：<strong>结果看起来「合理」</strong>（曲线平滑、夏普像那么回事），不会报错，只有当你手算对一组数才发现扰动量串了。在生产里可能上线后才暴露。</p>
+            </div>
+
+            <p><strong>性能权衡。</strong>深拷贝一个大 DataFrame 是真实成本。回测引擎常用「写时复制」思路：只在真正要写的那一刻才 copy（pandas 2.0+ 的 Copy-on-Write 模式 <code>pd.options.mode.copy_on_write = True</code> 就是把这件事系统化，从此切片读永远安全、写自动触发复制）。</p>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「<code>deepcopy</code> 遇到循环引用会死循环吗？还有什么开销？」</p>
+            <p><strong>理想回答：</strong>不会死循环。<code>deepcopy</code> 内部维护一个 memo 字典记录「已复制过的对象 id → 新对象」，循环引用时第二次遇到同一对象直接返回 memo 里的副本。开销有两块：递归遍历整张对象图的时间，以及 memo 字典的内存。对超大嵌套结构，deepcopy 可能比你想的慢很多，热路径上要么换 view+CoW，要么自己写浅层手工复制。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q17 ===================== -->
+    <div class="qa-card" id="q17">
+      <div class="qa-q"><span class="qa-id">Q17</span>Pandas 中 <code>apply</code>、<code>map</code>、向量化运算的性能差异？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>性能排序（快→慢）：<strong>NumPy 向量化 &gt; Pandas 内置方法 &gt; apply &gt; 纯 Python 循环</strong>。</p>
+        <pre><code># 最快：向量化
+df['ret'] = df['close'].pct_change()
+
+# 较快：内置方法
+df['log_ret'] = np.log(df['close'] / df['close'].shift(1))
+
+# 慢：apply（每行调用一次Python函数）
+df['signal'] = df.apply(lambda row: my_func(row['a'], row['b']), axis=1)
+
+# 最慢：iterrows
+for idx, row in df.iterrows(): ...</code></pre>
+        <p><strong>原则</strong>：能向量化就不用 apply，能用内置方法就不自己写。处理大型 tick 数据时，性能差异可达 100 倍以上。</p>
+        <p><strong>进阶</strong>：对无法向量化的复杂逻辑，考虑用 <code>numba.jit</code> 加速或用 <code>polars</code> 替代 Pandas。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：apply 为什么慢？向量化为什么快？numba / polars 替代方案</summary>
+          <div class="expand-body">
+            <p><strong>apply 慢的本质：它是「披着糖衣的 Python 循环」。</strong><code>df.apply(func, axis=1)</code> 会对每一行：(1) 把这行打包成一个 Series 对象（构造对象有开销）；(2) 回到 Python 解释器调用一次 <code>func</code>；(3) 每次属性访问 <code>row['a']</code> 又走一遍 Python 的 <code>__getitem__</code> 派发。$n$ 行就有 $n$ 次解释器往返，每次都付「装箱→Python 字节码→拆箱」的税。</p>
+
+            <p><strong>向量化快的本质：把循环下沉到 C 层，外加批量内存访问。</strong><code>df['close'].pct_change()</code> 背后是一整块连续的 float64 缓冲区，循环写在编译好的 C 里跑，没有解释器往返、没有逐元素装箱成 Python <code>float</code> 对象。再加上 CPU 能用 SIMD 一次处理多个元素、缓存命中率高，所以快几十上百倍。</p>
+
+            <table>
+              <thead><tr><th>写法</th><th>循环在哪</th><th>每元素是否装箱成 Py 对象</th><th>相对速度</th></tr></thead>
+              <tbody>
+                <tr><td>NumPy 向量化</td><td>C 层</td><td>否</td><td>1×（基准）</td></tr>
+                <tr><td>Pandas 内置 (.shift/.rolling)</td><td>C/Cython 层</td><td>否</td><td>~1–2×</td></tr>
+                <tr><td>apply(axis=1)</td><td>Python 层</td><td>是（每行一个 Series）</td><td>~50–200×</td></tr>
+                <tr><td>iterrows</td><td>Python 层</td><td>是（每行 Series + 拆列）</td><td>~100–500×</td></tr>
+              </tbody>
+            </table>
+
+            <p><strong>当逻辑真的无法向量化时</strong>（比如带状态的路径依赖、复杂分支），有两条路：</p>
+            <p>① <strong>numba.jit</strong>：把热点函数 JIT 编译成机器码，对 ndarray 友好。注意要传 numpy 数组而不是 Series，且首次调用有编译开销。</p>
+            <pre><code>from numba import njit
+import numpy as np
+
+@njit                      # 编译成机器码，循环以 C 速度跑
+def trailing_stop(prices, drop):
+    n = len(prices)
+    out = np.empty(n, dtype=np.bool_)
+    peak = prices[0]
+    for i in range(n):
+        peak = max(peak, prices[i])
+        out[i] = prices[i] &lt; peak * (1 - drop)   # 带状态、难向量化
+    return out
+
+signal = trailing_stop(df['close'].to_numpy(), 0.05)</code></pre>
+            <p>② <strong>polars</strong>：基于 Rust + Arrow 的 DataFrame，查询惰性优化、多线程、列式存储。它的表达式 API 鼓励你写向量化表达式，且原生并行，常比 pandas 快数倍且内存更省。</p>
+            <pre><code>import polars as pl
+df = pl.read_parquet("ticks.parquet")
+out = (df.lazy()
+         .with_columns((pl.col("close").pct_change()).alias("ret"))
+         .filter(pl.col("ret") &gt; 0.01)
+         .collect())        # collect 时才真正执行，查询计划被优化</code></pre>
+
+            <div class="callout tip">
+              <div class="callout-title">✅ 面试提示</div>
+              <p>被问「怎么加速这段 apply」时，标准答题路径是：先尝试改写成内置向量化 → 不行就 numba/Cython → 数据量大且 IO 重就上 polars/Dask。能说出「apply 慢是因为每行一次 Python 解释器往返 + Series 装箱」就赢了大半。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「<code>df.apply(func, axis=0)</code>（按列）和 <code>axis=1</code>（按行）性能为什么差很多？」</p>
+            <p><strong>理想回答：</strong><code>axis=0</code> 只对每<em>列</em>调用一次 func，列数通常很少（几十几百），且每次拿到的是一整列向量、可以再向量化，所以快。<code>axis=1</code> 对每<em>行</em>调用一次，行数往往是百万级，每次还要把异质 dtype 的一行打包成 Series，开销爆炸。所以 axis=1 的 apply 是性能红线，能避就避。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q18 ===================== -->
+    <div class="qa-card" id="q18">
+      <div class="qa-q"><span class="qa-id">Q18</span>Python GIL 是什么？如何在量化中实现真正的并行？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>GIL（全局解释器锁）使得 CPython 中同一时刻只有一个线程执行 Python 字节码。</p>
+        <p><strong>影响</strong>：CPU 密集型任务（如大规模因子计算）无法通过多线程加速。</p>
+        <p><strong>解决方案：</strong></p>
+        <table>
+          <thead><tr><th>方案</th><th>适用场景</th><th>工具</th></tr></thead>
+          <tbody>
+            <tr><td>多进程</td><td>CPU 密集型因子计算</td><td><code>multiprocessing</code>, <code>joblib</code>, <code>ProcessPoolExecutor</code></td></tr>
+            <tr><td>多线程</td><td>IO 密集型（数据下载、API 请求）</td><td><code>threading</code>, <code>asyncio</code></td></tr>
+            <tr><td>向量化/C 扩展</td><td>数值计算</td><td>NumPy, Numba, Cython</td></tr>
+            <tr><td>分布式计算</td><td>超大规模回测</td><td>Dask, Ray, Spark</td></tr>
+          </tbody>
+        </table>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：GIL 到底锁的是什么？引用计数、CPU-bound 用多进程、IO-bound 用 async 的原理</summary>
+          <div class="expand-body">
+            <p><strong>GIL 锁的是「解释器状态」，不是你的业务对象。</strong>它是一把全局互斥锁，保证同一时刻只有一个线程在执行 CPython 字节码、操作解释器内部数据结构。最核心的被保护对象是<strong>引用计数</strong>。</p>
+
+            <p><strong>为什么引用计数需要 GIL。</strong>CPython 靠引用计数管理内存：每个对象有个 <code>ob_refcnt</code>，被引用 +1，引用消失 -1，归零就回收。<code>refcnt += 1</code> 这种操作在多线程下是<em>非原子</em>的（读-改-写三步）。两个线程同时增减同一对象的计数，就会丢更新，导致对象被提前释放（崩溃）或永不释放（泄漏）。GIL 用一把大锁简单粗暴地序列化了所有字节码执行，从而免费保证了引用计数安全。代价就是真并行没了。</p>
+
+            <p><strong>所以 CPU-bound 必须用多进程。</strong>多线程下，N 个线程抢一把 GIL，CPU 密集任务等于排队单线程跑，4 核也只用 1 核。多进程则每个进程有<em>独立的解释器和独立的 GIL</em>，真正吃满多核。</p>
+            <pre><code>from concurrent.futures import ProcessPoolExecutor
+import numpy as np
+
+def compute_factor(chunk):          # CPU 密集：纯计算
+    return (chunk - chunk.mean()) / chunk.std()
+
+chunks = np.array_split(big_returns, 8)
+with ProcessPoolExecutor(max_workers=8) as ex:   # 8 进程 = 8 个 GIL
+    results = list(ex.map(compute_factor, chunks))</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 多进程的隐藏成本</div>
+              <p>进程间不共享内存，参数和返回值要<strong>序列化（pickle）</strong>跨进程传输。如果每个任务要传几百 MB 的 DataFrame，序列化开销可能吃掉并行收益。对策：用共享内存（<code>multiprocessing.shared_memory</code> / numpy memmap）、或让子进程自己从磁盘读、或换 Ray（有更高效的对象存储）。</p>
+            </div>
+
+            <p><strong>为什么 IO-bound 用多线程 / async 反而合适。</strong>关键事实：当线程陷入 IO 等待（网络请求、读盘）时，CPython 会<em>主动释放 GIL</em>，让别的线程跑。所以下载 500 只股票行情这种「大部分时间在等网络」的任务，多线程能重叠等待时间，效果很好。</p>
+            <pre><code># IO 密集：用 asyncio 单线程并发上千请求，无 GIL 争用、无线程切换开销
+import asyncio, aiohttp
+
+async def fetch(session, url):
+    async with session.get(url) as r:   # await 时让出控制权
+        return await r.json()
+
+async def main(urls):
+    async with aiohttp.ClientSession() as s:
+        return await asyncio.gather(*[fetch(s, u) for u in urls])</code></pre>
+            <p><code>asyncio</code> 是单线程协作式并发：遇到 <code>await</code> 就把控制权交回事件循环去跑别的协程，没有线程切换和锁竞争，比多线程更轻，适合海量并发 IO。</p>
+
+            <p><strong>NumPy 为什么能「绕过」GIL。</strong>NumPy 的重计算在 C 层做，很多函数在进入纯 C 计算时会释放 GIL，所以即便在多线程里，底层 BLAS（如矩阵乘）也能多核并行。这就是「向量化 + 多线程」对数值计算依然有效的原因。</p>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「Python 3.13 的 no-GIL（free-threaded）模式出来了，GIL 这道题以后是不是没用了？」</p>
+            <p><strong>理想回答：</strong>方向上 no-GIL 让多线程能真正跑满多核，但它不是免费的：去掉 GIL 后引用计数要改成原子操作或有偏向锁，单线程性能有回退，且大量 C 扩展需要适配才线程安全。现阶段它是可选实验特性，生产里多进程 + 向量化仍是主力。理解 GIL 的存在原因（保护引用计数）比记结论更重要——这正好解释了 no-GIL 为什么这么难做。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q19 ===================== -->
+    <div class="qa-card" id="q19">
+      <div class="qa-q"><span class="qa-id">Q19</span>如何避免 Pandas 中的 "SettingWithCopyWarning"？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>这个警告出现在对 DataFrame 切片的赋值操作中，因为切片可能返回视图（view）而非副本（copy），赋值行为不确定。</p>
+        <pre><code># 危险写法：链式索引
+df[df['sector'] == 'tech']['weight'] = 0.5  # 可能无效
+
+# 正确写法1：.loc
+df.loc[df['sector'] == 'tech', 'weight'] = 0.5
+
+# 正确写法2：显式copy
+subset = df[df['sector'] == 'tech'].copy()
+subset['weight'] = 0.5</code></pre>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：链式索引的机制、view/copy 的不确定性，与一次到位的修法</summary>
+          <div class="expand-body">
+            <p><strong>警告的根源是「链式索引」(chained indexing)。</strong><code>df[mask]['weight'] = 0.5</code> 实际上是两步：</p>
+            <pre><code>tmp = df[mask]        # 第①步：__getitem__，返回 view 还是 copy 不确定
+tmp['weight'] = 0.5   # 第②步：__setitem__，写到 tmp 上</code></pre>
+            <p>问题在于第①步的返回值<strong>到底是原数据的视图还是一份副本，取决于内存布局和 dtype</strong>，pandas 自己都无法静态保证。如果是 copy，第②步改的是临时对象、原 <code>df</code> 纹丝不动（赋值「丢了」）；如果是 view，原 <code>df</code> 才会被改。结果不确定 → pandas 抛 <code>SettingWithCopyWarning</code> 提醒你「你可能在改一个副本，且我说不准」。</p>
+
+            <p><strong>为什么 <code>.loc</code> 能根治。</strong><code>df.loc[mask, 'weight'] = 0.5</code> 是<em>单次</em>索引操作：行选择和列选择在一个 <code>__setitem__</code> 调用里完成，pandas 明确知道你要写回原 <code>df</code>，路径唯一、行为确定，所以既正确又不警告。</p>
+
+            <table>
+              <thead><tr><th>写法</th><th>是否链式</th><th>结果</th></tr></thead>
+              <tbody>
+                <tr><td><code>df[mask]['w'] = x</code></td><td>是（两次 [])</td><td>⚠️ 不确定，常常无效</td></tr>
+                <tr><td><code>df.loc[mask, 'w'] = x</code></td><td>否（单次 .loc）</td><td>✅ 确定写回原 df</td></tr>
+                <tr><td><code>sub = df[mask].copy(); sub['w'] = x</code></td><td>否</td><td>✅ 明确操作独立副本</td></tr>
+              </tbody>
+            </table>
+
+            <div class="callout note">
+              <div class="callout-title">🧭 决策口诀</div>
+              <p>「我想改<strong>原表</strong>」→ 用 <code>.loc[行, 列]</code> 一次性写。<br/>「我想要一份<strong>独立子集</strong>再改、不影响原表」→ 先 <code>.copy()</code> 再改。<br/>永远不要把两个方括号连写来赋值。</p>
+            </div>
+
+            <p><strong>量化里的真实代价。</strong>常见 bug：在回测函数里 <code>sub = df[df.date == today]</code> 然后 <code>sub['signal'] = ...</code>，你以为信号写回了主表，其实写进了一个副本，主表里 signal 全是 NaN，回测「无脑空仓」也不报错。pandas 2.0 的 Copy-on-Write（<code>pd.options.mode.copy_on_write = True</code>）彻底消除了这种歧义：切片读永远是逻辑副本，链式赋值要么明确生效要么明确报错，未来这会成为默认行为。</p>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「<code>.loc</code> 和 <code>.iloc</code> 在这个问题上有区别吗？什么时候用哪个？」</p>
+            <p><strong>理想回答：</strong>两者都是单次索引、都能安全写回，区别只是定位方式：<code>.loc</code> 用<em>标签</em>（label，包括布尔掩码、行名/列名），<code>.iloc</code> 用<em>整数位置</em>。量化里按条件筛选（如 sector==tech、date 区间）几乎都用 <code>.loc</code> + 布尔掩码；只有在明确按「第几行第几列」操作时才用 <code>.iloc</code>。要避免的是 <code>.loc</code> 链式之外再套一层 <code>[]</code>，那又退回到链式索引了。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="python-进阶">Python 进阶 (Q20–Q21)</h2>
+
+    <!-- ===================== Q20 ===================== -->
+    <div class="qa-card" id="q20">
+      <div class="qa-q"><span class="qa-id">Q20</span>装饰器（Decorator）的原理？在量化系统中的实际应用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>装饰器本质上是一个接收函数并返回新函数的高阶函数，语法糖 <code>@decorator</code> 等价于 <code>func = decorator(func)</code>。</p>
+        <p><strong>量化中的实际应用：</strong></p>
+        <pre><code>import time
+import functools
+
+# 1. 计时器：监控因子计算耗时
+def timer(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        print(f"{func.__name__} took {elapsed:.4f}s")
+        return result
+    return wrapper
+
+# 2. 缓存：避免重复计算（如日频因子值）
+from functools import lru_cache
+
+@lru_cache(maxsize=1024)
+def get_factor_exposure(ticker, date):
+    ...
+
+# 3. 重试机制：应对数据源不稳定
+def retry(max_retries=3, delay=1):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise
+                    time.sleep(delay * (attempt + 1))
+        return wrapper
+    return decorator</code></pre>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：闭包机制、functools.wraps 解决了什么、带参装饰器的三层结构</summary>
+          <div class="expand-body">
+            <p><strong>装饰器 = 闭包 + 高阶函数。</strong><code>wrapper</code> 引用了外层的 <code>func</code>，即使 <code>timer</code> 早已返回，<code>wrapper</code> 仍然「记得」<code>func</code>——这就是<strong>闭包</strong>：内层函数捕获了外层作用域的变量。Python 用 <code>__closure__</code> 里的 cell 对象保存这些被捕获的自由变量。</p>
+            <pre><code>def timer(func):
+    def wrapper(*args, **kwargs):
+        ...
+        return func(*args, **kwargs)   # ← 捕获了外层的 func
+    return wrapper
+
+@timer
+def calc(): ...
+# 等价于 calc = timer(calc)
+print(timer(calc).__closure__[0].cell_contents)  # 就是 func 本身</code></pre>
+
+            <p><strong>functools.wraps 解决「身份丢失」问题。</strong>不加 wraps 时，被装饰后的函数对外暴露的是 <code>wrapper</code> 的元数据：<code>__name__</code> 变成 <code>'wrapper'</code>、<code>__doc__</code> 丢失、签名也变了。这会破坏日志、调试、依赖反射的框架（如 pytest、FastAPI 路由）。</p>
+            <pre><code>def bad(func):
+    def wrapper(*a, **k): return func(*a, **k)
+    return wrapper
+
+def good(func):
+    @functools.wraps(func)          # 把 func 的 __name__/__doc__/__wrapped__ 复制给 wrapper
+    def wrapper(*a, **k): return func(*a, **k)
+    return wrapper
+
+@bad
+def f(): "doc"
+@good
+def g(): "doc"
+
+print(f.__name__)   # 'wrapper'  ❌ 身份丢了
+print(g.__name__)   # 'g'        ✅ 身份保留
+print(g.__wrapped__)  # 还能拿回原函数</code></pre>
+
+            <p><strong>带参数的装饰器是三层嵌套。</strong>因为 <code>@retry(max_retries=3)</code> 先调用 <code>retry(3)</code> 拿到「真正的装饰器」，再用它去装饰函数。所以结构是「参数层 → 装饰器层 → wrapper 层」：</p>
+            <pre><code>def repeat(n):                      # ① 参数层：吃装饰器参数
+    def decorator(func):            # ② 装饰器层：吃被装饰的函数
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):  # ③ 执行层：吃调用参数
+            for _ in range(n):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)                          # = repeat(3) -&gt; decorator -&gt; 装饰 task
+def task(): print("run")
+# 等价于 task = repeat(3)(task)</code></pre>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 量化里 lru_cache 的坑</div>
+              <p><code>@lru_cache</code> 要求参数可哈希，所以不能直接缓存吃 DataFrame/ndarray 的函数。而且它<strong>永不失效</strong>（除非手动 <code>cache_clear()</code>）——如果用它缓存「当日因子」，跨交易日不清缓存就会读到昨天的脏数据。日内回测里尤其危险。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「装饰器和直接调函数比，多了什么开销？热路径上能用吗？」</p>
+            <p><strong>理想回答：</strong>每次调用多了一层 <code>wrapper</code> 的 Python 函数调用 + <code>*args, **kwargs</code> 的打包解包，纳秒级但在百万次/秒的热路径上会累积。对策：热点上要么内联掉装饰器逻辑，要么把装饰器做的事（计时、缓存）移到批量层而非单元素层。另外 <code>functools.wraps</code> 本身只在「定义时」执行一次，不影响每次调用的开销。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q21 ===================== -->
+    <div class="qa-card" id="q21">
+      <div class="qa-q"><span class="qa-id">Q21</span>Python 中的生成器（Generator）是什么？在量化中的应用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>生成器是使用 <code>yield</code> 关键字的函数，它惰性地产生值，不会一次性将所有结果加载到内存。</p>
+        <p><strong>量化应用</strong>：处理大规模 tick 数据时避免内存溢出。</p>
+        <pre><code>def read_ticks(filepath):
+    """逐行读取数亿行tick数据，内存占用恒定"""
+    with open(filepath) as f:
+        header = f.readline().strip().split(',')
+        for line in f:
+            values = line.strip().split(',')
+            yield dict(zip(header, values))
+
+# 流式处理，内存友好
+for tick in read_ticks('huge_tick_data.csv'):
+    process(tick)</code></pre>
+        <p>也常用于滚动窗口计算、事件驱动回测引擎的信号生成等。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：惰性求值、内存对比、generator vs list comprehension、yield from</summary>
+          <div class="expand-body">
+            <p><strong>惰性求值（lazy evaluation）的机制。</strong>调用生成器函数<em>不会执行函数体</em>，只返回一个生成器对象。每次 <code>next()</code> 才执行到下一个 <code>yield</code>、产出一个值、然后<strong>冻结</strong>整个执行状态（局部变量、指令指针都保存在 frame 里），等下次 <code>next()</code> 再解冻继续。所以它能「跑一半停住」，这是普通函数做不到的。</p>
+
+            <p><strong>内存对比：恒定 vs 线性。</strong>读 1 亿行 tick：</p>
+            <pre><code>import sys
+
+# list：一次性materialize，内存 O(n)，1 亿条可能几十 GB → OOM
+all_ticks = [parse(line) for line in open("huge.csv")]   # 💥
+
+# generator：内存 O(1)，任意时刻只持有一条
+gen = (parse(line) for line in open("huge.csv"))         # ✅
+sys.getsizeof([x for x in range(1_000_000)])  # ~8 MB（列表）
+sys.getsizeof((x for x in range(1_000_000)))  # ~200 B（生成器，与 n 无关）</code></pre>
+
+            <table>
+              <thead><tr><th>维度</th><th>list comprehension <code>[...]</code></th><th>generator expression <code>(...)</code></th></tr></thead>
+              <tbody>
+                <tr><td>求值时机</td><td>立即全部算出</td><td>惰性、按需</td></tr>
+                <tr><td>内存</td><td>$O(n)$</td><td>$O(1)$</td></tr>
+                <tr><td>可否多次遍历</td><td>可以</td><td>只能一次（耗尽即止）</td></tr>
+                <tr><td>可否随机访问/切片</td><td>可以 <code>lst[5]</code></td><td>不可以</td></tr>
+                <tr><td>适合</td><td>小数据、要复用</td><td>大数据流、一次性管道</td></tr>
+              </tbody>
+            </table>
+
+            <p><strong><code>yield from</code>：委托给子生成器。</strong>用来把多个数据源串成一个流，避免手写嵌套循环，也能正确传递 <code>send()</code>/异常。量化里常用于「把若干天的 tick 文件拼成一条连续流」：</p>
+            <pre><code>def read_one(path):
+    with open(path) as f:
+        for line in f:
+            yield parse(line)
+
+def read_many(paths):
+    for p in paths:
+        yield from read_one(p)     # 把每个文件的流「接力」出来
+
+stream = read_many(["d1.csv", "d2.csv", "d3.csv"])  # 仍是 O(1) 内存的单一流</code></pre>
+
+            <div class="callout tip">
+              <div class="callout-title">✅ 面试提示：生成器还能做「协程式」流水线</div>
+              <p>生成器配合 <code>itertools</code>（<code>islice</code>、<code>chain</code>、<code>groupby</code>）能搭出零拷贝的数据处理管道：filter→map→window 全程惰性，整条 1 亿行只走一遍、内存恒定。这正是事件驱动回测引擎的常见骨架。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「生成器只能遍历一次，如果我后面又要用一遍怎么办？」</p>
+            <p><strong>理想回答：</strong>三种办法看场景：(1) 数据不大就直接 <code>list(gen)</code> 落地成列表复用；(2) 想复用「生成逻辑」就把它写成生成器<em>函数</em>，每次调用得到一个新生成器；(3) 想缓存又保持惰性可以用 <code>itertools.tee</code>，但要注意 tee 会在内部缓存两个迭代器的进度差，若一快一慢仍可能占大量内存。量化里 tick 流通常是真的大，默认就该用一次性流 + 不回头的设计。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="cpp-基础">C++ 基础（QR 延伸阅读）(Q22–Q26)</h2>
+
+    <!-- ===================== Q22 ===================== -->
+    <div class="qa-card" id="q22">
+      <div class="qa-q"><span class="qa-id">Q22</span>C++ 中指针和引用的区别？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>特性</th><th>指针</th><th>引用</th></tr></thead>
+          <tbody>
+            <tr><td>可否为空</td><td>可以为 nullptr</td><td>不可以，必须绑定对象</td></tr>
+            <tr><td>可否重新绑定</td><td>可以指向其他对象</td><td>不可以，绑定后不变</td></tr>
+            <tr><td>语法</td><td>需要 <code>*</code> 解引用</td><td>直接使用，语法透明</td></tr>
+            <tr><td>内存</td><td>占用空间（存地址）</td><td>通常被编译器优化为别名</td></tr>
+          </tbody>
+        </table>
+        <p><strong>量化场景</strong>：高频交易系统中传递大型订单簿对象时用 <code>const &amp;</code> 避免拷贝开销；智能指针（<code>shared_ptr</code>, <code>unique_ptr</code>）管理行情数据的生命周期。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：从内存模型看指针 vs 引用，以及智能指针的所有权语义</summary>
+          <div class="expand-body">
+            <p><strong>内存模型视角。</strong>指针本身是一个变量，占 8 字节（64 位机），里面存的是另一个对象的地址；你能改这 8 字节让它指向别处，也能让它存 0（nullptr）。引用不是独立对象，它在语言层面是「目标对象的别名」，编译器通常直接用目标地址替换，<em>不一定</em>占额外内存（也可能用指针实现，标准不强制）。</p>
+            <pre><code>int a = 10, b = 20;
+int* p = &amp;a;     // p 存 a 的地址
+p = &amp;b;          // ✅ 重新指向 b
+*p = 99;         // 改 b
+
+int&amp; r = a;      // r 永远是 a 的别名
+r = b;           // ⚠️ 不是重绑定！是把 b 的值赋给 a（a 变成 20）
+// 引用一旦绑定不能改绑，这行只是普通赋值</code></pre>
+
+            <p><strong>为什么热路径传 <code>const&amp;</code>。</strong>按值传一个大对象（如整本订单簿 <code>OrderBook</code>）会触发拷贝构造，复制全部成员，$O(n)$；传 <code>const OrderBook&amp;</code> 只传一个地址（8 字节），$O(1)$，且 <code>const</code> 保证不被修改。这是 C++ 性能代码的默认习惯。</p>
+            <pre><code>double mid_price(const OrderBook&amp; ob) {   // 不拷贝，只读
+    return (ob.best_bid() + ob.best_ask()) / 2.0;
+}</code></pre>
+
+            <p><strong>裸指针 → 智能指针的所有权革命。</strong>裸指针不表达「谁负责 delete」，是内存泄漏和悬垂指针的源头。智能指针用类型表达所有权：</p>
+            <table>
+              <thead><tr><th>类型</th><th>所有权</th><th>开销</th><th>用途</th></tr></thead>
+              <tbody>
+                <tr><td><code>unique_ptr</code></td><td>独占，不可拷贝只能 move</td><td>≈ 裸指针，零开销</td><td>默认首选，明确单一所有者</td></tr>
+                <tr><td><code>shared_ptr</code></td><td>共享，引用计数</td><td>原子计数 + 控制块，有开销</td><td>多处共享同一行情对象的生命周期</td></tr>
+                <tr><td><code>weak_ptr</code></td><td>不持有，观察</td><td>小</td><td>打破 shared_ptr 循环引用</td></tr>
+              </tbody>
+            </table>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ shared_ptr 在高频里不是免费的</div>
+              <p>引用计数的增减是<strong>原子操作</strong>，多线程频繁拷贝 shared_ptr 会引发缓存行竞争（cache-line contention），在微秒级热路径上是真实延迟。能用 <code>unique_ptr</code> 或 <code>const&amp;</code> 就别滥用 shared_ptr。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「既然引用更安全，为什么还需要指针？」</p>
+            <p><strong>理想回答：</strong>引用「必须绑定、不可改绑、不能为空」这些约束在很多场景下恰恰是限制：需要表达「可选/可能不存在」时要 nullptr（或 <code>std::optional</code>）；需要在容器里存一堆可重新指向的句柄时要指针；需要做指针算术遍历连续内存时要指针；管理动态生命周期时要（智能）指针。引用适合「函数参数/返回值这种确定存在、用完即走」的别名场景。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q23 ===================== -->
+    <div class="qa-card" id="q23">
+      <div class="qa-q"><span class="qa-id">Q23</span>C++ 中的虚函数（virtual function）和多态是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>虚函数允许通过基类指针/引用调用派生类的重写方法，实现运行时多态。底层通过虚函数表（vtable）实现。</p>
+        <pre><code>class Strategy {
+public:
+    virtual void on_market_data(const MarketData&amp; md) = 0;  // 纯虚函数
+    virtual ~Strategy() = default;  // 虚析构函数（重要！）
+};
+
+class MomentumStrategy : public Strategy {
+public:
+    void on_market_data(const MarketData&amp; md) override {
+        // 动量策略的具体实现
+    }
+};</code></pre>
+        <p><strong>面试追问</strong>：为什么基类析构函数要声明为 virtual？——如果不声明，通过基类指针 delete 派生类对象时只调用基类析构函数，派生类资源不会释放，造成内存泄漏。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：vtable / vptr 的内存布局，虚析构泄漏实测，虚调用的代价</summary>
+          <div class="expand-body">
+            <p><strong>vtable 与 vptr 的布局。</strong>任何带虚函数的类，编译器为<em>每个类</em>生成一张静态的虚函数表（vtable），里面是该类各虚函数的函数指针。每个<em>对象</em>的开头被悄悄塞进一个隐藏指针 <code>vptr</code>，指向它真实类型的 vtable。</p>
+            <pre><code>// 对象内存（概念）:
+// MomentumStrategy 实例
+// ┌────────────┐
+// │ vptr ──────┼──► MomentumStrategy 的 vtable
+// │ 成员数据... │       ├─ &amp;MomentumStrategy::on_market_data
+// └────────────┘       └─ &amp;MomentumStrategy::~MomentumStrategy
+
+Strategy* s = new MomentumStrategy();
+s-&gt;on_market_data(md);
+// 运行时：取 s 的 vptr → 查 vtable 第 0 槽 → 跳转到 Momentum 版本
+// 这就是「运行时多态」：调哪个版本由对象的真实类型（vptr）决定</code></pre>
+
+            <p><strong>虚析构泄漏的机制（实测心智）。</strong>delete 一个基类指针时，编译器要决定调谁的析构：</p>
+            <pre><code>struct Base { ~Base() { } };                 // ❌ 非虚
+struct Derived : Base {
+    int* big = new int[1'000'000];           // 持有资源
+    ~Derived() { delete[] big; }
+};
+
+Base* p = new Derived();
+delete p;   // 析构非虚 → 只调 ~Base()，~Derived() 没跑 → big 泄漏 100 万 int</code></pre>
+            <p>把 <code>~Base()</code> 改成 <code>virtual</code> 后，delete 会先查 vtable 找到 <code>~Derived()</code>、释放 <code>big</code>，再链式调 <code>~Base()</code>，资源干净释放。<strong>规则：任何打算被继承、且会用基类指针管理的类，析构函数必须 virtual。</strong></p>
+
+            <div class="callout note">
+              <div class="callout-title">📐 虚调用的代价 = 为什么高频常避开它</div>
+              <p>一次虚调用 = 一次内存间接（取 vptr）+ 一次表查找 + 一次<strong>间接跳转</strong>。间接跳转让 CPU 难以分支预测、可能流水线停顿，且妨碍编译器内联。在每秒百万次回调的热路径上，这点开销会累积——所以 HFT 里常用模板/CRTP（见 Q26）做静态多态来消除虚调用。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「在构造函数或析构函数里调用虚函数，会发生什么？」</p>
+            <p><strong>理想回答：</strong>不会多态分发到派生类版本。因为对象的构造是「从基类到派生类」逐层进行的，在 <code>Base</code> 构造期间，<code>vptr</code> 还指向 <code>Base</code> 的 vtable（派生部分尚未构造好），所以调到的是 <code>Base</code> 版本；析构期间反向同理。这常常是新手 bug——想在基类构造里调派生逻辑，结果调了空实现。正确做法是构造完成后再显式初始化，或用两段式 init。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q24 ===================== -->
+    <div class="qa-card" id="q24">
+      <div class="qa-q"><span class="qa-id">Q24</span>什么是 move 语义和右值引用？在高频系统中的意义？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>C++11 引入右值引用（<code>&amp;&amp;</code>）和 <code>std::move</code>，允许"窃取"临时对象的资源而非拷贝。</p>
+        <pre><code>// 拷贝：O(n) —— 分配新内存，逐元素复制
+std::vector&lt;Order&gt; orders2 = orders1;
+
+// 移动：O(1) —— 直接接管 orders1 的内存
+std::vector&lt;Order&gt; orders3 = std::move(orders1);
+// orders1 此后处于"有效但未定义"状态</code></pre>
+        <p><strong>高频意义</strong>：在微秒级延迟的交易系统中，一次不必要的深拷贝可能就是几微秒的延迟。移动语义在订单传递、行情数据转发等热路径上至关重要。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：左值/右值、移动如何「偷指针」、std::move 其实不 move、完美转发</summary>
+          <div class="expand-body">
+            <p><strong>左值 vs 右值。</strong>左值（lvalue）是有名字、有持久地址、能被取地址的东西（变量）；右值（rvalue）是临时的、即将销毁的值（字面量、函数返回的临时对象）。右值引用 <code>T&amp;&amp;</code> 专门绑定右值——既然这东西马上要死，我们就可以放心「掏空」它而不是复制。</p>
+
+            <p><strong>移动到底做了什么：偷指针，不搬数据。</strong>一个 <code>vector</code> 内部无非是三个指针（data 头、size、capacity）。拷贝构造要 new 一块新内存 + memcpy 所有元素（$O(n)$）；移动构造只是把那三个指针<em>抄</em>过来、再把源对象的指针置空（$O(1)$），底层那块大内存的「房产证」直接过户。</p>
+            <pre><code>class Buffer {
+    int* data_; size_t n_;
+public:
+    // 移动构造：偷资源，O(1)
+    Buffer(Buffer&amp;&amp; o) noexcept : data_(o.data_), n_(o.n_) {
+        o.data_ = nullptr;   // 源置空，防止它析构时 double-free
+        o.n_ = 0;
+    }
+    ~Buffer() { delete[] data_; }   // 源已置空，delete nullptr 安全
+};</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 移动构造一定要 <code>noexcept</code></div>
+              <p><code>std::vector</code> 扩容时，只有当元素的移动构造是 <code>noexcept</code> 才会用「移动」搬迁旧元素，否则为保证异常安全会退回到「拷贝」——你以为有移动优化，其实悄悄变回 $O(n)$ 拷贝。高频里这是隐蔽的性能杀手。</p>
+            </div>
+
+            <p><strong><code>std::move</code> 名字骗人：它不移动任何东西。</strong>它只是一个 <code>static_cast&lt;T&amp;&amp;&gt;</code>，把左值「强转」成右值引用，从而让重载决议选中移动构造/移动赋值。真正干活的是那些移动成员函数。</p>
+            <pre><code>std::vector&lt;Order&gt; v = std::move(orders1);
+// std::move(orders1) 等价于 static_cast&lt;vector&lt;Order&gt;&amp;&amp;&gt;(orders1)
+// 仅仅是「类型转换+表态」，触发 vector 的移动构造才真正偷了内存</code></pre>
+
+            <p><strong>完美转发（perfect forwarding）。</strong>模板里用 <code>T&amp;&amp;</code>（转发引用）+ <code>std::forward</code> 能保持参数的左/右值属性原样传下去，避免不必要的拷贝——这是写高效泛型工厂/包装器（如把订单转发给下游处理器）的关键。</p>
+            <pre><code>template&lt;class... Args&gt;
+void submit(Args&amp;&amp;... args) {
+    downstream.handle(std::forward&lt;Args&gt;(args)...);  // 右值仍是右值，可被移动
+}</code></pre>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「函数 <code>return local_vector;</code> 要不要写 <code>return std::move(local_vector);</code>？」</p>
+            <p><strong>理想回答：</strong>不要。直接 <code>return local_vector;</code> 时编译器会做 NRVO（具名返回值优化），直接在调用方的内存里构造，<em>连移动都省了</em>，零开销。若你手写 <code>std::move</code> 反而<strong>抑制了 NRVO</strong>，强制走一次移动构造，更慢。结论：返回局部对象就裸 return，让编译器优化。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q25 ===================== -->
+    <div class="qa-card" id="q25">
+      <div class="qa-q"><span class="qa-id">Q25</span>C++ STL 容器的选择原则？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <table>
+          <thead><tr><th>容器</th><th>底层结构</th><th>查找</th><th>插入/删除</th><th>量化场景</th></tr></thead>
+          <tbody>
+            <tr><td><code>vector</code></td><td>连续数组</td><td>$O(n)$</td><td>尾部 $O(1)$</td><td>时间序列、K 线存储</td></tr>
+            <tr><td><code>deque</code></td><td>分段连续</td><td>$O(n)$</td><td>头尾 $O(1)$</td><td>滑动窗口</td></tr>
+            <tr><td><code>map/set</code></td><td>红黑树</td><td>$O(\log n)$</td><td>$O(\log n)$</td><td>有序订单簿</td></tr>
+            <tr><td><code>unordered_map/set</code></td><td>哈希表</td><td>$O(1)$ 均摊</td><td>$O(1)$ 均摊</td><td>ticker→策略映射</td></tr>
+            <tr><td><code>priority_queue</code></td><td>堆</td><td>取极值 $O(1)$</td><td>插入 $O(\log n)$</td><td>事件驱动引擎的事件队列</td></tr>
+          </tbody>
+        </table>
+        <p><strong>高频考虑</strong>：<code>vector</code> 因内存连续、缓存友好，在遍历性能上远优于链表。高频系统中优先使用 <code>vector</code> + 排序，而非 <code>map</code>。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：缓存局部性为什么让 vector 吊打 map / list，大 O 之外的真实世界</summary>
+          <div class="expand-body">
+            <p><strong>大 O 会骗人，因为它忽略了「常数」和内存墙。</strong>现代 CPU 从主存取一个数据要约 100ns，从 L1 缓存只要约 1ns——差 100 倍。CPU 每次访存按「缓存行」（通常 64 字节）成块搬运，并会<em>预取</em>后续连续地址。所以数据是否连续，比理论复杂度更能决定真实速度。</p>
+
+            <table>
+              <thead><tr><th>容器</th><th>内存布局</th><th>遍历时缓存表现</th></tr></thead>
+              <tbody>
+                <tr><td><code>vector</code></td><td>一整块连续</td><td>✅ 完美：预取器全程命中，几乎无 miss</td></tr>
+                <tr><td><code>list</code></td><td>节点散落堆各处</td><td>❌ 每跳一个节点几乎必 cache miss + 指针解引用</td></tr>
+                <tr><td><code>map</code>(红黑树)</td><td>节点散落 + 树指针</td><td>❌ 每层一次 miss，还要比较跳转</td></tr>
+              </tbody>
+            </table>
+
+            <p><strong>实战结论：小数据集，<code>vector</code> + 线性扫描 / 二分常胜过 <code>map</code>。</strong>对几十~几千个元素，遍历连续 vector（即使是 $O(n)$）往往比查 $O(\log n)$ 的红黑树还快，因为后者每步都 cache miss。所以高频里常见模式是「<code>vector</code> 存好、<code>std::sort</code> 排序、<code>std::lower_bound</code> 二分查」，全程连续内存。</p>
+            <pre><code>// 高频偏好：连续内存 + 二分，而非 std::map
+std::vector&lt;std::pair&lt;int, Quote&gt;&gt; book;   // 按 price 排序的连续数组
+auto it = std::lower_bound(book.begin(), book.end(), key,
+            [](auto&amp; e, int k){ return e.first &lt; k; });   // O(log n) 但缓存友好</code></pre>
+
+            <div class="callout note">
+              <div class="callout-title">🧩 各容器的隐藏陷阱</div>
+              <p>• <code>vector</code> 扩容会<strong>整体重分配 + 失效所有迭代器/指针</strong>；预知大小就 <code>reserve()</code>。<br/>
+              • <code>unordered_map</code> 理论 $O(1)$，但<strong>节点也是散布在堆上</strong>（不像 vector 连续），缓存不如想象中好，且 rehash 时全员搬迁。<br/>
+              • <code>deque</code> 分段连续，随机访问比 vector 略慢，但头尾插入 $O(1)$ 且不使所有迭代器失效，适合滑动窗口。<br/>
+              • <code>map</code> 的优势是<strong>有序遍历</strong>和稳定迭代器，订单簿要按价排序时它仍有价值。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「<code>vector</code> 中间删除一个元素是 $O(n)$，但我又想快速删，怎么办？」</p>
+            <p><strong>理想回答：</strong>看是否在乎顺序。不在乎顺序时用「swap-and-pop」：把要删的元素和最后一个 <code>std::swap</code>，再 <code>pop_back()</code>，$O(1)$。在乎顺序就只能 $O(n)$ 搬移，或者改用别的结构（如带空洞标记的对象池）。高频里订单池常用 swap-and-pop 或 freelist 复用槽位，避免重分配。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q26 ===================== -->
+    <div class="qa-card" id="q26">
+      <div class="qa-q"><span class="qa-id">Q26</span>什么是模板（Template）元编程？在量化中有什么用？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>模板允许在编译期生成特化代码，实现零开销抽象。</p>
+        <pre><code>// 编译期计算阶乘
+template&lt;int N&gt;
+struct Factorial {
+    static constexpr int value = N * Factorial&lt;N-1&gt;::value;
+};
+template&lt;&gt;
+struct Factorial&lt;0&gt; {
+    static constexpr int value = 1;
+};</code></pre>
+        <p><strong>量化应用：</strong></p>
+        <ul>
+          <li><strong>表达式模板（Expression Templates）</strong>：避免临时对象，实现高效矩阵运算（Eigen 库的核心技术）。</li>
+          <li><strong>策略模式的编译期实现</strong>：用模板参数选择不同的执行逻辑，避免虚函数的间接调用开销。</li>
+          <li><strong>CRTP（Curiously Recurring Template Pattern）</strong>：静态多态，高频系统中替代虚函数。</li>
+        </ul>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：CRTP 如何用零成本替代虚函数、表达式模板如何消灭临时对象</summary>
+          <div class="expand-body">
+            <p><strong>CRTP：把运行时多态搬到编译期。</strong>核心套路是「派生类把自己作为模板参数传给基类」，基类用 <code>static_cast</code> 拿到派生类型，在编译期就解析出该调哪个实现——<strong>没有 vptr、没有间接跳转、可以内联</strong>。</p>
+            <pre><code>template&lt;class Derived&gt;
+struct Strategy {                       // 基类模板
+    void on_data(const MarketData&amp; md) {
+        // 编译期就知道真实类型，调用可内联，零虚调用开销
+        static_cast&lt;Derived*&gt;(this)-&gt;handle(md);
+    }
+};
+
+struct Momentum : Strategy&lt;Momentum&gt; {   // ← 把自己传进去（CRTP）
+    void handle(const MarketData&amp; md) { /* 动量逻辑 */ }
+};
+
+Momentum m;
+m.on_data(md);   // 编译后等价于直接内联 Momentum::handle，无 vtable</code></pre>
+            <table>
+              <thead><tr><th></th><th>虚函数（动态多态）</th><th>CRTP（静态多态）</th></tr></thead>
+              <tbody>
+                <tr><td>分发时机</td><td>运行时（查 vtable）</td><td>编译期</td></tr>
+                <tr><td>开销</td><td>间接跳转 + 难内联</td><td>零开销，可内联</td></tr>
+                <tr><td>能否运行时切换类型</td><td>能（基类指针存异质对象）</td><td>不能（类型编译期固定）</td></tr>
+                <tr><td>代码膨胀</td><td>小</td><td>每个实例化一份代码，可能膨胀</td></tr>
+              </tbody>
+            </table>
+            <p>所以选型是权衡：要把不同策略放进同一个容器、运行时插拔 → 用虚函数；策略类型在编译期已知、追求极致延迟 → 用 CRTP。</p>
+
+            <p><strong>表达式模板：消灭中间临时对象。</strong>朴素的运算符重载里，<code>d = a + b + c</code>（向量）会先算 <code>a+b</code> 生成一个临时向量、再加 <code>c</code> 生成另一个临时，多次分配 + 多遍遍历。表达式模板让 <code>a+b+c</code> 不立即计算，而是构造一棵「表达式类型」，到赋值时<em>一次循环</em>算出每个元素：</p>
+            <pre><code>// 概念：a+b+c 的类型是 Add&lt;Add&lt;Vec,Vec&gt;, Vec&gt;，不产生临时数组
+for (size_t i = 0; i &lt; n; ++i)
+    d[i] = a[i] + b[i] + c[i];   // 编译器最终生成这一个融合循环（loop fusion）
+// 零临时对象、一遍内存、SIMD 友好 —— 这正是 Eigen 比手写还快的秘密</code></pre>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 模板的代价</div>
+              <p>编译期计算 + 代码生成意味着：编译时间变长、编译错误信息冗长难读、每个实例化生成独立机器码可能导致二进制膨胀和指令缓存压力。元编程是「用编译期复杂度换运行期零开销」，别为了炫技在不需要极致性能的地方滥用。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「现在有 <code>constexpr</code> 和 C++20 concepts 了，传统那种递归模板元编程是不是过时了？」</p>
+            <p><strong>理想回答：</strong>很大程度上是。像 Factorial 这种编译期计算，现在直接写 <code>constexpr</code>/<code>consteval</code> 函数即可，可读性远好于递归模板特化；类型约束用 concepts 比 SFINAE 清晰得多。但「类型层面」的编排（表达式模板、CRTP、类型列表）仍要靠模板。趋势是：能用 <code>constexpr</code> 做值计算就别用模板递归，模板留给真正的泛型与零开销抽象。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <h2 id="numpy-数值计算">NumPy / 数值计算 (Q27–Q28)</h2>
+
+    <!-- ===================== Q27 ===================== -->
+    <div class="qa-card" id="q27">
+      <div class="qa-q"><span class="qa-id">Q27</span>NumPy 的广播（Broadcasting）机制是什么？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <p>广播允许不同形状的数组进行运算。规则：</p>
+        <ol>
+          <li>从最后一个维度开始对齐；</li>
+          <li>每个维度要么相同，要么其中一个为 1；</li>
+          <li>维度为 1 的那个轴会被"广播"（逻辑复制）。</li>
+        </ol>
+        <pre><code># 对每只股票的收益率减去其均值（截面去均值）
+returns = np.random.randn(252, 500)     # (252天, 500只股票)
+mean_ret = returns.mean(axis=0)          # (500,)
+demeaned = returns - mean_ret            # 广播：(252, 500) - (500,) → (252, 500)</code></pre>
+        <p>理解广播是写出高效 NumPy 代码的关键，避免不必要的循环和内存分配。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：对齐规则逐步演算、一个广播失败的例子、为什么广播零拷贝</summary>
+          <div class="expand-body">
+            <p><strong>对齐规则一步步走（右对齐）。</strong>两个数组形状从<em>最右</em>开始逐维比较，每一维满足「相等 或 其中一方为 1」即可兼容，缺失的高维补 1。结果取每维的较大值。</p>
+            <pre><code>A.shape = (252, 500)
+B.shape =      (500,)     # 右对齐后视作 (1, 500)
+比较:  dim -1: 500 vs 500 ✅ 相等
+       dim -2: 252 vs   1 ✅ 一方为1 → 广播到 252
+结果:        (252, 500)   # B 沿第0轴被「逻辑复制」252 次</code></pre>
+            <p>再看一个三维例子，给每只股票每天的若干特征做标准化：</p>
+            <pre><code>X    = np.random.randn(252, 500, 8)   # (天, 股票, 特征)
+mean = X.mean(axis=0)                  # (500, 8)
+# (252,500,8) vs (500,8)→(1,500,8)：每维 8=8, 500=500, 252 vs 1 → OK
+Xc   = X - mean                        # (252,500,8) 零循环搞定截面去均值</code></pre>
+
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 一个会报错的广播</div>
+              <pre><code>a = np.ones((3, 4))
+b = np.ones((3,))      # 右对齐: dim-1 是 4 vs 3 → 既不相等也都不为1
+a + b
+# ValueError: operands could not be broadcast together
+#             with shapes (3,4) (3,)</code></pre>
+              <p>新手想「按行减」却写成上面这样。修法：把 <code>b</code> 变成列向量 <code>(3,1)</code> 显式表达广播意图：</p>
+              <pre><code>a + b[:, None]     # b.shape (3,) → (3,1)，dim-1: 4 vs 1 ✅ 广播成功
+# b[:, None] 等价于 b.reshape(3, 1)，None/np.newaxis 插入新轴</code></pre>
+            </div>
+
+            <p><strong>为什么广播零拷贝、省内存。</strong>「逻辑复制」不是真的把 <code>mean_ret</code> 复制 252 份。NumPy 用 <strong>stride（步长）技巧</strong>：把被广播的那一维 stride 设为 0，遍历时该维「原地踏步」，反复读同一块内存。所以 <code>returns - mean_ret</code> 不会为 mean_ret 额外分配 252×500 的内存，只在输出上分配一次。这正是广播比「手动 <code>np.tile</code> 复制再相减」更快更省的原因。</p>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「<code>returns.mean(axis=0)</code> 和 <code>axis=1</code> 在这个去均值里分别是什么含义？写错会怎样？」</p>
+            <p><strong>理想回答：</strong><code>returns</code> 是 (天, 股票)。<code>axis=0</code> 沿时间维聚合 → 得到每只股票的<em>时序均值</em>，减去它是「每只股票自己去均值」（时序 demean）。<code>axis=1</code> 沿股票维聚合 → 每天所有股票的<em>截面均值</em>，减去它才是「截面去均值/市场中性化」。两者在量化里意义完全不同：截面 demean 用于做市场中性因子，时序 demean 用于去趋势。写错轴不会报错（因为广播可能照样成立），但因子含义全错——这是非常隐蔽且致命的 bug，必须用 <code>keepdims=True</code> 配合明确意图。</p>
+            <pre><code># 截面去均值（每天减去当天市场均值）正确写法：
+cross_mean = returns.mean(axis=1, keepdims=True)   # (252, 1)
+demeaned   = returns - cross_mean                  # 广播 (252,500)-(252,1)</code></pre>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===================== Q28 ===================== -->
+    <div class="qa-card" id="q28">
+      <div class="qa-q"><span class="qa-id">Q28</span>如何用 NumPy 高效实现滚动窗口计算？</div>
+      <div class="qa-body">
+        <h4>标准答案</h4>
+        <pre><code># 方法1：stride_tricks（零拷贝，最高效）
+from numpy.lib.stride_tricks import sliding_window_view
+windows = sliding_window_view(prices, window_shape=20)  # (n-19, 20)
+rolling_mean = windows.mean(axis=1)
+
+# 方法2：cumsum技巧（O(n)，适合求和/均值）
+cumsum = np.cumsum(np.insert(prices, 0, 0))
+rolling_sum = cumsum[20:] - cumsum[:-20]
+rolling_mean = rolling_sum / 20
+
+# 方法3：Pandas（最方便，但慢于纯NumPy）
+pd.Series(prices).rolling(20).mean()</code></pre>
+        <p>在大规模因子计算中，方法 1 和 2 比 Pandas 快 3–10 倍。</p>
+
+        <details class="expand">
+          <summary>🔬 深度拓展：stride_tricks 的零拷贝内存原理、cumsum 技巧的 O(n) 正确性与数值陷阱</summary>
+          <div class="expand-body">
+            <p><strong>stride_tricks 为什么零拷贝。</strong>ndarray = 一块连续 buffer + 一组「步长」(strides，每个轴前进一步要跳几个字节) + shape。<code>sliding_window_view</code> 不复制数据，只是<strong>造一个新的 (shape, strides) 视图</strong>，让相邻窗口在内存上重叠地指向同一块 buffer。</p>
+            <pre><code>prices = np.arange(8.0)          # 连续: [0 1 2 3 4 5 6 7], itemsize=8字节
+w = sliding_window_view(prices, 3)
+# w.shape  = (6, 3)
+# w.strides = (8, 8)  ← 行步长和列步长都是 8 字节！
+# 含义：往下一行只前移 1 个元素，所以窗口重叠：
+#   w[0]=[0,1,2]  w[1]=[1,2,3]  w[2]=[2,3,4] ...
+# 6×3=18 个元素「看起来」存在，实际仍只占用原来 8 个元素的内存</code></pre>
+            <div class="callout warn">
+              <div class="callout-title">⚠️ 视图是只读级别的危险，且聚合才materialize</div>
+              <p>① <code>sliding_window_view</code> 返回的是只读视图，<strong>别往里写</strong>（重叠内存，一处写会污染多个窗口）。② 真正的内存峰值发生在 <code>windows.mean(axis=1)</code>：虽然窗口本身零拷贝，但许多聚合实现会临时物化，对超长序列 + 大窗口仍要留意。要极致省内存就用方法 2。</p>
+            </div>
+
+            <p><strong>cumsum 技巧：把窗口求和从 $O(nk)$ 降到 $O(n)$。</strong>朴素滚动求和每个窗口都重新加 $k$ 个数，总共 $O(nk)$。前缀和（prefix sum）的洞见是：窗口 $[i, i+k)$ 的和 = <code>S[i+k] - S[i]</code>，其中 $S$ 是累加和数组，一次相减就得一个窗口和。</p>
+            <pre><code>prices = np.array([2., 4., 6., 8., 10.])
+k = 2
+# 前面插 0，让 S[0]=0，使索引对齐干净
+S = np.cumsum(np.insert(prices, 0, 0))   # [0, 2, 6, 12, 20, 30]
+rolling_sum = S[k:] - S[:-k]             # [6-0? ...] 逐项:
+#  S[2]-S[0]=6-0=6   → 窗口[2,4] 和 = 6  ✅
+#  S[3]-S[1]=12-2=10 → 窗口[4,6] 和 = 10 ✅
+#  S[4]-S[2]=20-6=14 → 窗口[6,8] 和 = 14 ✅
+#  S[5]-S[3]=30-12=18→ 窗口[8,10]和 = 18 ✅
+rolling_mean = rolling_sum / k</code></pre>
+            <p><strong>正确性要点：</strong>插一个 0 在最前面，使 <code>S[j]</code> 表示「前 j 个元素之和」，于是 <code>S[i+k]-S[i]</code> 精确等于第 $i$ 个窗口的和，索引不偏移。结果长度是 <code>n-k+1</code>。</p>
+            <div class="callout note">
+              <div class="callout-title">📉 cumsum 的数值陷阱（面试加分项）</div>
+              <p>前缀和会把所有数累加进一个越来越大的数，再相减得局部和。当序列很长、量级悬殊时，<strong>大数相减会损失浮点精度（catastrophic cancellation）</strong>。所以 pandas 的 <code>rolling</code> 默认<em>不</em>用 cumsum 技巧，而用更稳定（但稍慢）的逐窗口算法。结论：追求速度且数据量级温和 → cumsum；要数值稳健 → stride 视图或 pandas。</p>
+            </div>
+
+            <p class="qa-q" style="border:none;padding:0;margin-top:1em;"><strong>🎤 面试追问演练</strong></p>
+            <p><strong>问：</strong>「滚动<em>标准差</em>能不能也用 cumsum 技巧 $O(n)$ 搞定？」</p>
+            <p><strong>理想回答：</strong>能，用「平方和的前缀和」。方差 $\text{Var} = \frac{1}{k}\sum x_i^2 - \left(\frac{1}{k}\sum x_i\right)^2$，所以同时维护 <code>cumsum(x)</code> 和 <code>cumsum(x**2)</code> 两个前缀和，各做一次区间相减就能 $O(n)$ 得到每个窗口的均值和平方均值，组合出方差再开根号。但这个公式正是上面说的「大数相减」重灾区——平方放大了量级，精度损失更严重，靠近 0 的方差甚至可能算出微小负数再 NaN。生产里若要稳健，用 Welford 在线算法或直接 stride 视图 + <code>np.std</code>。</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== 脚本固定这样写，顺序不要改 ===== -->
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学习路径 & 项目复盘 · Quant Research 知识库</title>
+  <meta name="description" content="QR 是什么、适合谁，国内量化面试的现实情况，A/B/C/D 状态自查路线，以及项目复盘最该准备的 8 个问题与深度拓展。" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+</head>
+<body data-page="paths">
+  <main class="content">
+    <h1>学习路径 & 项目复盘</h1>
+    <p class="page-lead">不建议从头硬啃。先搞清楚 QR 是什么、自己适不适合，再对照 A/B/C/D 选一条最像自己的路线；如果已经有项目，直接用项目复盘 8 问把研究故事讲清楚。</p>
+
+    <h2 id="about">👋 前言：QR 是什么 & 适合谁</h2>
+    <p>本项目来自<strong>社招面试 30+ 家量化私募</strong>、拿到<strong>数家百亿级私募 QR offer</strong> 的经历，以及<strong>创业做过实盘产品</strong>后对量化全链路的体感。</p>
+    <p>QR 的核心是在不确定环境里反复<strong>提出假设、验证信号、解释失败</strong>。如果你喜欢从数据中提出假设，愿意接受大量无效实验，愿意长期补数学 / 统计 / 编程短板，这份笔记会更适合你。</p>
+    <p>内容覆盖概率统计、线性代数、时间序列、因子研究、机器学习、回测评估、组合优化、经典论文与高频问答。适合：</p>
+    <ul>
+      <li>准备 QR 面试的人</li>
+      <li>金融工程、数学、统计、计算机背景，想系统补齐量化研究方法论的人</li>
+      <li>已经会基础 Python / 数学，但需要把知识组织成面试可表达答案的人</li>
+      <li>想从论文、因子、回测和机器学习角度理解量化研究流程的人</li>
+      <li>业余做量化、把它当兴趣或副业的人：先建立研究闭环，少踩回测好看、落地全是坑的弯路</li>
+    </ul>
+
+    <h2 id="reality">🧩 国内量化面试的一些现实情况</h2>
+    <p>以下是截至 2026-06 的经验性观察和公开资料整理，用来帮助校准预期；不同机构、年份、团队和策略方向差异很大。</p>
+    <ul>
+      <li><strong>常见考察面</strong>：部分 QR 面试会混合考察概率统计、线性代数、时间序列、机器学习验证、因子研究、回测偏差和项目复盘。概率论通常分布在笔试中，也会在面试后半段以智力题的形式出现。</li>
+      <li><strong>项目表达很重要</strong>：很多候选人问什么答什么，没有完整表达研究假设、数据口径、验证方式、失败原因和下一步改进。</li>
+      <li><strong>面试官眼中的闪光点</strong>：真正有区分度的部分，集中在 alpha 来自哪里、有没有前视、过拟合如何排除、实盘/样本外为什么衰减、坏 case 怎么定位。</li>
+      <li><strong>实盘经验</strong>：交易成本、滑点、容量、撮合、风控和监控问题，会把"看起来有效"的研究拉回现实约束。</li>
+      <li><strong>岗位差异很大</strong>：因子、模型、组合、交易执行、CTA、股票 Alpha、海外市场等方向的能力权重不同，一套题覆盖不了所有岗位。越成熟的机构对期望的人选的形象越立体，所以一定一定也要海投，不要因为被拒绝否定自己。</li>
+    </ul>
+    <p>更多细节推荐阅读：<a target="_blank" rel="noopener" href="https://x.com/0xYuCry/status/2052689260327862686">国内量化求职碎碎念</a></p>
+
+    <h2 id="paths">🧭 你现在处在哪种状态？</h2>
+    <p>建议只选一个最接近当前状态的路径，不需要从头到尾线性阅读。下面四块可以直接点开看。</p>
+
+    <details class="expand" open>
+      <summary>A. 数学/统计基础较弱，需要补基础</summary>
+      <div class="expand-body">
+        <ul>
+          <li><strong>适合谁</strong>：知道自己想准备 QR，但概率统计、线性代数、时间序列基础不稳。</li>
+          <li><strong>先看什么</strong>：<a href="math.html">数学与统计基础</a>，重点是条件概率、CLT、MLE、协方差矩阵、SVD、平稳性、协整和 GBM。</li>
+          <li><strong>暂时跳过什么</strong>：复杂深度学习结构、微观结构延伸阅读、过细的工具和平台列表。</li>
+          <li><strong>输出物</strong>：能用自己的话解释 10 个核心数学/统计问题，并能说出它们在因子、风险或回测里的用途。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>B. 已有 ML / Python 基础，需要转向 QR 表达</summary>
+      <div class="expand-body">
+        <ul>
+          <li><strong>适合谁</strong>：会建模或写代码，但不熟悉因子研究、回测验证和金融数据中的坑。</li>
+          <li><strong>先看什么</strong>：<a href="factor.html">因子与 Alpha 策略</a>、<a href="ml.html">机器学习 / 深度学习在量化中的应用</a>，尤其 IC/IR、回测偏差、时间序列交叉验证、特征工程和信息泄漏。</li>
+          <li><strong>暂时跳过什么</strong>：泛泛的框架清单、偏 QD 的 C++ 工程细节、与当前目标岗位无关的资产方向。</li>
+          <li><strong>输出物</strong>：把一个模型项目改写成 QR 面试口径：预测目标、样本划分、特征构造、验证方式、风险点和失败复盘。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>C. 已有因子/回测项目，需要面试复盘</summary>
+      <div class="expand-body">
+        <ul>
+          <li><strong>适合谁</strong>：已经做过因子、策略、论文复现或比赛项目，但不确定怎么讲清楚研究价值。</li>
+          <li><strong>先看什么</strong>：<a href="factor.html">Q31-Q39</a>，以及与你项目最接近的策略方向论文。</li>
+          <li><strong>暂时跳过什么</strong>：入门概念解释、与项目无关的工具堆叠、不能支撑你项目叙事的论文列表。</li>
+          <li><strong>输出物</strong>：形成一页项目复盘：假设、数据、处理、验证、结果、失败原因、下一步改进。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="expand">
+      <summary>D. 临近面试，只做高频主题查漏</summary>
+      <div class="expand-body">
+        <ul>
+          <li><strong>适合谁</strong>：已经有目标岗位或面试安排，只需要快速检查知识漏洞和表达短板。</li>
+          <li><strong>先看什么</strong>：数理基础速查，再按薄弱项回到对应章节。</li>
+          <li><strong>暂时跳过什么</strong>：长期学习路线、行业泛谈、暂时无法转化成面试表达的延伸阅读。</li>
+          <li><strong>输出物</strong>：一份错题/卡壳清单，每道题都能在 2 分钟内讲出定义、直觉、量化应用和常见陷阱。</li>
+        </ul>
+      </div>
+    </details>
+
+    <h2 id="review-8">📋 项目复盘时最该准备的 8 个问题</h2>
+    <p>如果你已经有因子、模型、CTA、论文复现或实盘相关项目，可以先用下面 8 个问题自查。真实面试里，项目追问通常会沿着这些方向展开。</p>
+    <ol>
+      <li><strong>Alpha 假设</strong>：你相信市场里哪类低效存在？这个低效为什么可能持续？</li>
+      <li><strong>预测目标</strong>：你预测的是收益、方向、排序、波动率、风险暴露还是交易点位？为什么这个目标和最终收益一致？</li>
+      <li><strong>数据口径</strong>：数据从哪里来？有没有幸存者偏差、前视偏差、复权/停牌/涨跌停/成交约束问题？</li>
+      <li><strong>验证方式</strong>：样本如何切分？有没有 walk-forward、purged K-fold、embargo 或严格样本外？</li>
+      <li><strong>评价指标</strong>：IC、Rank IC、IR、分组收益、换手、回撤、Sharpe、容量之间如何互相印证？</li>
+      <li><strong>失败案例</strong>：最大回撤或坏 case 出现时，你如何定位到行情、因子、模型、执行还是风控问题？</li>
+      <li><strong>实盘落差</strong>：回测到实盘会被哪些因素打折？滑点、交易成本、撮合、延迟、容量和风控阈值分别怎么影响？</li>
+      <li><strong>下一步改进</strong>：优先补数据、改标签、改特征、改模型、改组合约束还是改执行？排序依据是什么？</li>
+    </ol>
+
+    <details class="expand">
+      <summary>🔬 深度拓展：面试官在每一问背后想确认什么 + 高分回答骨架</summary>
+      <div class="expand-body">
+        <p>无论你是大一新生想提前理解研究范式，还是正在求职的候选人，要记住：面试官问这 8 个问题，本质是在验证<strong>"你是不是真的做过研究闭环，而不是跑通一段代码"</strong>。下面给出每一问的考察点和一个可套用的高分回答结构。</p>
+
+        <p><strong>① Alpha 假设</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：你是先有市场直觉再找信号，还是先挖出一个数字再硬编故事？能不能区分真 alpha 和数据挖掘/运气。</li>
+          <li><strong>高分回答骨架</strong>：先说一句市场低效的来源（行为偏差 / 结构约束 / 信息扩散慢）→ 再说为什么它短期难被套利掉 → 最后给出这个假设可被证伪的边界（在什么情况下它应该失效）。</li>
+        </ul>
+
+        <p><strong>② 预测目标</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：目标函数和最终 PnL 是否一致；你有没有想清楚预测"排序"还是"收益幅度"带来的差异。</li>
+          <li><strong>高分回答骨架</strong>：说明你预测的对象（如未来 5 日超额收益排序）→ 解释为什么选它（与组合构建方式、换手、容量匹配）→ 指出它和直接最大化收益之间可能的偏差。</li>
+        </ul>
+
+        <p><strong>③ 数据口径</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：你知不知道金融数据的坑——幸存者偏差、前视偏差、复权、停牌涨跌停、point-in-time。</li>
+          <li><strong>高分回答骨架</strong>：交代数据来源和时间戳口径 → 列出你专门处理过的偏差（如用 point-in-time 财报、剔除退市股保留历史成分）→ 说明哪些坑你还没完全消除以及影响多大。</li>
+        </ul>
+
+        <p><strong>④ 验证方式</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：是否理解时序数据不能随机 K-Fold；是否会用 embargo / purging 防泄漏。</li>
+          <li><strong>高分回答骨架</strong>：说明切分方式（walk-forward / purged K-Fold）→ 解释 embargo 长度怎么和标签前瞻窗口对齐 → 强调所有预处理都在训练集 fit、测试集 transform。</li>
+        </ul>
+
+        <p><strong>⑤ 评价指标</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：能否用多个指标互相印证，而不是只盯一个漂亮的 Sharpe。</li>
+          <li><strong>高分回答骨架</strong>：以 IC/RankIC 看选股能力 → 用分组单调性和多空收益验证 → 用换手、容量、回撤检查是否可落地 → 说明几个指标矛盾时你怎么取舍。</li>
+        </ul>
+
+        <p><strong>⑥ 失败案例</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：有没有定位问题的能力——能不能把一次回撤拆解到行情 regime、因子、模型还是执行。</li>
+          <li><strong>高分回答骨架</strong>：举一个真实坏 case → 描述你如何逐层排查（先看行情环境，再看因子暴露，再看模型/执行）→ 给出最终归因和当时的应对。</li>
+        </ul>
+
+        <p><strong>⑦ 实盘落差</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：是否理解回测和实盘之间的距离，能不能量化交易成本和容量的影响。</li>
+          <li><strong>高分回答骨架</strong>：列出主要折损项（滑点、冲击成本、撮合、延迟、容量）→ 说明你在回测里怎么近似它们（如平方根冲击模型）→ 给出加入成本后收益打了多少折。</li>
+        </ul>
+
+        <p><strong>⑧ 下一步改进</strong></p>
+        <ul>
+          <li><strong>面试官的考察点</strong>：有没有研究判断力——知道在数据、标签、特征、模型、组合、执行里先改哪一个。</li>
+          <li><strong>高分回答骨架</strong>：给出一个明确的优先级（如"先补数据质量，再改标签定义"）→ 说明排序依据（哪个环节当前误差/收益弹性最大）→ 用一句话说明怎么验证改进是否有效。</li>
+        </ul>
+      </div>
+    </details>
+
+    <h3>面试复盘里最常见的追问层次</h3>
+    <p>真实面试很少停在"定义是什么"。更常见的路径是从基础概念一路追到项目边界。</p>
+    <table>
+      <thead><tr><th>层次</th><th>面试官想确认什么</th><th>你应该准备的输出</th></tr></thead>
+      <tbody>
+        <tr><td>概念层</td><td>定义、假设、适用条件是否清楚</td><td>用自己的话解释概念，并说出量化场景中的用途</td></tr>
+        <tr><td>验证层</td><td>是否知道金融数据里的坑</td><td>样本切分、前视偏差、交易成本、信息泄漏、过拟合控制</td></tr>
+        <tr><td>项目层</td><td>是否真的做过研究闭环</td><td>数据来源、标签定义、特征构造、实验设计、失败复盘</td></tr>
+        <tr><td>生产层</td><td>是否理解回测和实盘之间的距离</td><td>滑点、容量、撮合、风控、监控、衰减和异常处理</td></tr>
+        <tr><td>反思层</td><td>是否有研究判断力</td><td>为什么这样做、哪里可能错、下一步先改什么</td></tr>
+      </tbody>
+    </table>
+
+    <h3>来自真实面试复盘的通用追问</h3>
+    <ul>
+      <li><strong>Alpha 从哪里来</strong>：信号背后的市场直觉是什么？为什么这不是噪声、数据挖掘或单纯运气？</li>
+      <li><strong>为什么选择这个预测目标</strong>：预测收益、方向、波动率、排序还是交易点位？目标函数和最终 PnL 是否一致？</li>
+      <li><strong>样本量与切分是否可靠</strong>：训练/验证/测试怎么切？有没有 purging、embargo、walk-forward 或样本外验证？</li>
+      <li><strong>如何避免过拟合</strong>：参数敏感性、特征筛选、重复试验、多重检验和坏 case 是否被记录？</li>
+      <li><strong>回测到实盘为什么会衰减</strong>：交易成本、滑点、撮合、容量、行情 regime、延迟和数据口径会如何影响结果？</li>
+      <li><strong>IC/IR 怎么解释</strong>：IC 为负或阶段性失效时怎么诊断？IC、分组收益、换手、回撤和最终组合收益如何对应？</li>
+      <li><strong>因子为什么有效/失效</strong>：因子暴露、行业/市值中性化、相关性、crowding、衰减周期和容量怎么分析？</li>
+      <li><strong>模型如何解释</strong>：黑盒模型出错时，如何做特征归因、分场景回看、分布外检测和与简单 baseline 的对照？</li>
+      <li><strong>失败案例怎么复盘</strong>：最大回撤、异常信号、实盘偏差或 bad trade 出现后，如何定位、止损、修正和监控？</li>
+      <li><strong>下一步怎么改进</strong>：你会优先补数据、改标签、改模型、改组合约束，还是改交易执行？为什么？</li>
+    </ul>
+  </main>
+
+  <script src="assets/nav.js"></script>
+  <script src="assets/search-index.js"></script>
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>
