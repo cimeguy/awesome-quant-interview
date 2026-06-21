@@ -13,7 +13,7 @@
 - 或起一个本地服务器（公式 CDN 加载更稳）：
 
   ```bash
-  cd site
+  cd docs
   python3 -m http.server 8000
   # 浏览器打开 http://localhost:8000
   ```
@@ -43,7 +43,7 @@
 ## 目录
 
 ```
-site/
+docs/
 ├── index.html                    # 首页
 ├── *.html                        # 各板块页面
 ├── assets/
@@ -60,13 +60,13 @@ site/
 页面是手写 HTML，编辑对应 `*.html` 即可。改动标题或题目后，重建搜索索引：
 
 ```bash
-cd site
+cd docs
 node scripts/build-search-index.js
 ```
 
 ## 部署
 
-把 `site/` 整个目录扔到任意静态托管即可（GitHub Pages / Vercel / Netlify / Nginx）。GitHub Pages 示例：仓库 Settings → Pages → 选择分支并把目录指向 `/site`。
+把 `docs/` 整个目录扔到任意静态托管即可（GitHub Pages / Vercel / Netlify / Nginx）。GitHub Pages：仓库 Settings → Pages → Source 选 "Deploy from a branch" → 分支 `main`、目录选 `/docs` → Save。
 
 ## 内容来源
 
