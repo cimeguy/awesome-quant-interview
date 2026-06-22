@@ -25,6 +25,10 @@
     <div class="qa-card" id="q29">
       <div class="qa-q"><span class="qa-id">Q29</span>什么是因子（Factor）？Alpha 和 Beta 的区别？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>因子，就是挑股票时反复管用的某个特征，好比挑西瓜看纹路。Beta（贝塔）是你随大流、跟着大盘一起涨跌就能拿到的那份钱；Alpha（阿尔法）是你比别人聪明、靠真本事多赚出来的那份钱。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>因子</strong>：能够系统性解释资产收益率截面差异的变量。换句话说，把一堆股票按某个变量（市值、估值、动量……）排序，如果排序能稳定地对应到未来收益的高低，这个变量就是一个因子。</p>
         <p><strong>Alpha vs Beta</strong>：</p>
@@ -62,6 +66,10 @@
     <div class="qa-card" id="q30">
       <div class="qa-q"><span class="qa-id">Q30</span>解释 Fama-French 三因子和五因子模型</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>几位学者发现：股票涨跌不只跟着大盘走，还能被几个共同特征解释。三因子＝大盘＋公司大小＋股票便宜还是贵；五因子又多加了赚不赚钱、是否乱花钱扩张这两条。它给了大家一把统一的尺子，去衡量你的赚钱是不是只在吃这些公共特征的钱。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>三因子模型（1993）</strong>：</p>
         <ul>
@@ -114,6 +122,10 @@
     <div class="qa-card" id="q31">
       <div class="qa-q"><span class="qa-id">Q31</span>常见的量价因子有哪些？如何构建？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>量价因子，就是只看股价和成交量算出来的特征，不碰公司财报，比如「最近一直在涨」「换手特别频繁」。构建，就是把这些原始数字洗干净：去掉极端的怪值、统一尺度、再抹平行业和大小盘的差异，让不同股票能放在一起公平比较。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>因子类别</th><th>代表因子</th><th>构建逻辑</th></tr></thead>
@@ -182,6 +194,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q32">
       <div class="qa-q"><span class="qa-id">Q32</span>什么是因子 IC（Information Coefficient）和 IR（Information Ratio）？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>IC，就是给因子打的「准头分」，看它猜涨跌准不准，有点像考试正确率。IR，看一个策略每冒一份险能多赚多少，是性价比。有个朴素的道理：哪怕单次准头很低，只要出手次数足够多，也能积少成多、赚到稳稳的钱。</p>
+        </div>
         <h4>标准答案</h4>
         <ul>
           <li><strong>IC</strong>：因子值与下期收益率的截面<strong>Rank 相关系数</strong>（Spearman）。衡量因子单期选股能力。
@@ -236,6 +252,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q33">
       <div class="qa-q"><span class="qa-id">Q33</span>因子的多重共线性问题如何处理？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>有时几个因子其实在说同一件事（比如都在量股票便不便宜）。把它们一起用，电脑会算糊涂，仓位忽正忽负乱跳。共线性（信息高度重复）的解法不是删掉，而是把重复的部分合并或剥离，只留下每个因子各自独特的信息。</p>
+        </div>
         <h4>标准答案</h4>
         <p>当多个因子高度相关时（如 EP 和 BP 都是价值因子），回归系数不稳定，<strong>单因子测试有效但组合后失效</strong>。</p>
         <p><strong>处理方法</strong>：</p>
@@ -287,6 +307,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q34">
       <div class="qa-q"><span class="qa-id">Q34</span>什么是因子拥挤（Factor Crowding）？如何检测和应对？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>拥挤，就是太多人用同一个赚钱套路、挤在同一批股票上。平时相安无事，可一旦有人急着跑，大家会同时夺路而逃，价格被踩踏暴跌、一起巨亏。应对靠多备几套不同套路、留够现金、别上太多杠杆（借钱放大仓位）。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>因子拥挤</strong>：过多资金追逐同一个因子策略，导致因子估值过高、预期收益下降、崩盘风险上升。</p>
         <p><strong>检测信号</strong>：</p>
@@ -344,6 +368,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q35">
       <div class="qa-q"><span class="qa-id">Q35</span>均值-方差优化（MVO）的原理和问题？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这是一套帮你算「每只股票该买多少钱」的数学方法，目标是同样风险下收益最大。毛病是它太较真：你给的收益预测稍微偏一点点，它就把仓位调得天翻地覆，还爱把钱全压在少数几只票上，实战里很不稳。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>原理（Markowitz, 1952）</strong>：</p>
         <p>$$\min_w \frac{1}{2} w^T \Sigma w \quad \text{s.t.} \quad w^T \mu = \mu_{\text{target}}, \quad \mathbf{1}^T w = 1$$</p>
@@ -401,6 +429,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q36">
       <div class="qa-q"><span class="qa-id">Q36</span>什么是风险平价（Risk Parity）？和等权有什么区别？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>等权，是每样东西都投一样多的钱。风险平价，是让每样东西「惹的麻烦（波动大小）」一样大。股票比债券能折腾，平摊钱反而让股票担了大头风险；风险平价就多买点稳的债券，把各自担的风险扯平。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>风险平价</strong>：使每个资产对组合总风险的贡献相等。</p>
         <p>资产 $i$ 的风险贡献：</p>
@@ -455,6 +487,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q37">
       <div class="qa-q"><span class="qa-id">Q37</span>回测中常见的偏差（Bias）有哪些？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>回测，就是拿历史数据假装重新交易一遍，看策略灵不灵。但很容易自己骗自己：偷看了当时还不知道的未来消息、只统计活下来的赢家（亏没的早被删了）、专挑走势好的时间段……这些都会让成绩虚高，上线就露馅。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>偏差</th><th>描述</th><th>危害</th></tr></thead>
@@ -514,6 +550,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q38">
       <div class="qa-q"><span class="qa-id">Q38</span>常用的策略评估指标有哪些？各自的局限？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>光看赚多少不够，还得看担了多少风险、稳不稳。夏普比率，就是「每担一份险能赚多少」的性价比分。但每个分都有盲点，比如夏普看不出「平时小赚、偶尔巨亏」的隐患，所以要好几个指标一起看。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>指标</th><th>公式/含义</th><th>局限</th></tr></thead>
@@ -571,6 +611,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q39">
       <div class="qa-q"><span class="qa-id">Q39</span>什么是过拟合？如何在策略开发中避免？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>过拟合，就是策略把历史背得太熟，连碰巧的巧合（噪声）都当成规律记住了，一换新数据就露馅。像死记答案的学生，考原题满分、换道新题就傻眼。防它要用「没见过的数据」检验，还要有讲得通的道理撑着。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>过拟合</strong>：模型/策略在历史数据上表现优异，但在新数据上表现大幅衰减。本质上是<em>拟合了噪声而非信号</em>。</p>
         <p><strong>判断信号</strong>：</p>
@@ -629,6 +673,10 @@ def build_factor(raw, ind_dummies, lncap):
     <div class="qa-card" id="q40">
       <div class="qa-q"><span class="qa-id">Q40</span>什么是交易成本模型？如何估计市场冲击成本？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>买卖股票要花钱：手续费、买价卖价之间的差价，还有你大笔买卖时会把价格推得对自己不利（这叫冲击成本，下单块头越大越费劲）。频繁换股的策略账面上看着赚，扣掉这些成本可能白忙一场。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>交易成本构成</strong>：</p>
         <ul>

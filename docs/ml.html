@@ -24,6 +24,10 @@
     <div class="qa-card" id="q41">
       <div class="qa-q"><span class="qa-id">Q41</span>偏差-方差权衡（Bias-Variance Tradeoff）是什么？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>模型犯错有两种方式。偏差大＝模型太笨（像硬用直线去描一条弯路），怎么学都学不会，叫"欠拟合"；方差大＝模型太较真，把训练题里的噪声都背下来，换套题就废，叫"过拟合"。这俩按下葫芦浮起瓢，得找平衡。金融噪声大，宁可笨一点也别太较真。</p>
+        </div>
         <h4>标准答案</h4>
         <p>泛化误差可以分解为三部分：</p>
         <p>$$\text{MSE} = \text{Bias}^2 + \text{Variance} + \text{Irreducible Noise}$$</p>
@@ -67,6 +71,10 @@
     <div class="qa-card" id="q42">
       <div class="qa-q"><span class="qa-id">Q42</span>正则化（L1/L2/ElasticNet）的区别和量化应用？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>正则化就是给模型加一句"别想太多"的紧箍咒，防止它把噪声也当规律学进去。L1 像用刀切，直接把没用的因子砍到 0、只留少数几个；L2 像用手压，所有因子都缩小但都保留；ElasticNet 是这两招混着用。目的都是让模型更简单、更稳。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>正则化</th><th>惩罚项</th><th>效果</th><th>量化场景</th></tr></thead>
@@ -111,6 +119,10 @@
     <div class="qa-card" id="q43">
       <div class="qa-q"><span class="qa-id">Q43</span>时间序列的交叉验证应该怎么做？为什么不能用普通 K-Fold？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>考模型要拿它没见过的数据当考题。但金融数据有时间先后，如果随机抽题，就可能拿"未来"去训练、"过去"来考——相当于考前偷看了答案，分数虚高、实盘就崩。正确做法是永远"用过去预测未来"，而且训练和测试之间留一道空隙，防止信息偷偷渗过去。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>问题</strong>：普通 K-Fold 随机划分，破坏了时间序列的时序结构，导致<strong>未来信息泄漏</strong>到训练集。</p>
         <p><strong>正确方法</strong>：</p>
@@ -165,6 +177,10 @@
     <div class="qa-card" id="q44">
       <div class="qa-q"><span class="qa-id">Q44</span>XGBoost / LightGBM 为什么在量化比赛中这么流行？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>XGBoost / LightGBM 是一种"很多小决策树一起投票"的模型。每棵树都在问一连串"如果…就…"的问题来做判断，特别擅长处理杂乱的表格数据，还自带挑重点、容忍缺失值的本事。但它太聪明，金融噪声大时容易把噪声也当规律背下来，所以未必比简单模型强。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>核心优势</strong>：</p>
         <ol>
@@ -218,6 +234,10 @@
     <div class="qa-card" id="q45">
       <div class="qa-q"><span class="qa-id">Q45</span>特征工程在量化 ML 中有哪些关键技巧？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>喂给模型的"线索"就叫特征，特征工程就是把原始数据加工成更好用的线索（比如排名、近期平均值）。最重要的一条铁律：做预测的那一刻，你必须真能拿到这个线索。要是偷偷用了"未来才知道的事"，等于穿越作弊——回测好看，实盘崩盘。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>技巧</th><th>描述</th><th>原因</th></tr></thead>
@@ -268,6 +288,10 @@
     <div class="qa-card" id="q46">
       <div class="qa-q"><span class="qa-id">Q46</span>RNN / LSTM / Transformer 在量化时间序列预测中各自的优劣？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这三个都是处理"有先后顺序的数据"（比如每天股价）的神经网络。RNN 像金鱼，记性短，太久之前的事就忘了；LSTM 给它配了个"记事本"，能记长一点；Transformer 更狠，能一眼扫完整段历史、还自动判断哪段最重要。但越复杂越吃数据，金融噪声大时反而容易翻车。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>模型</th><th>优势</th><th>劣势</th><th>量化适用</th></tr></thead>
@@ -308,6 +332,10 @@
     <div class="qa-card" id="q47">
       <div class="qa-q"><span class="qa-id">Q47</span>AutoEncoder 和 VAE 在量化中有什么用？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>AutoEncoder 先把一堆数据压缩成几个核心数字（像把长文章缩成摘要），再尝试还原回去。要是某条数据怎么都还原不像，就说明它很"怪"，可以拿来抓异常行情。VAE 是升级版，不仅会压缩，还能照着学到的规律"无中生有"造出新的仿真数据。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>AutoEncoder（AE）</strong>：</p>
         <p>$$\text{Input} \xrightarrow{\text{Encoder}} \text{Latent} \xrightarrow{\text{Decoder}} \text{Reconstruction}$$</p>
@@ -346,6 +374,10 @@
     <div class="qa-card" id="q48">
       <div class="qa-q"><span class="qa-id">Q48</span>GAN（生成对抗网络）在量化中有哪些应用？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>GAN 是让两个网络互相比拼：一个拼命造假数据，一个拼命鉴别真假，你来我往越练越强，最后造出的假数据以假乱真。量化里用它来"造"行情数据补充训练。难点是：金融数据"像不像"很难判断，必须检查它有没有真实市场的怪脾气（比如大跌之后往往更动荡）。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>金融数据生成</strong>：</p>
         <ul>
@@ -397,6 +429,10 @@
     <div class="qa-card" id="q49">
       <div class="qa-q"><span class="qa-id">Q49</span>图神经网络（GNN）在量化中的应用场景？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>股票之间有各种关系：上下游供货、同行业、互相影响……把它们用线连起来就是一张"关系网"。GNN 就是专门看这种网的模型，让每只股票参考"邻居"的情况来判断自己。难点是这张网会变——今天的供应商明天可能就换了，关系得不断更新。</p>
+        </div>
         <h4>标准答案</h4>
         <p>金融市场天然是图结构：股票之间通过产业链、股东关系、资金流、相关性等形成网络。</p>
         <p><strong>应用场景</strong>：</p>
@@ -444,6 +480,10 @@
     <div class="qa-card" id="q50">
       <div class="qa-q"><span class="qa-id">Q50</span>强化学习（RL）在量化中的应用和挑战？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>强化学习就是让程序像打游戏一样，通过不断试错、拿"奖励"或"惩罚"来摸索最优操作。量化里最成功的是"怎么把一笔大单拆开慢慢卖、少惊动市场"。难点是金融数据太少、市场又老在变、奖励也难设计，所以拿它直接选股目前还不太靠谱。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>应用场景</strong>：</p>
         <ul>
@@ -499,6 +539,10 @@
     <div class="qa-card" id="q51">
       <div class="qa-q"><span class="qa-id">Q51</span>如何处理金融数据中标签（Label）不平衡的问题？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>预测涨跌时，绝大多数时候都是小打小闹（噪声），真正大涨大跌很少——这就叫"样本不平衡"。坏处是模型会偷懒：反正"几乎没动"占多数，它一律猜"没动"也能蒙对很多，却啥也没学到。常见对策是只挑涨得最猛、跌得最惨的来学，中间模糊地带直接扔掉。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>场景</strong>：预测涨跌时，实际中大量微小变动（噪声），真正大涨大跌是少数。</p>
         <p><strong>处理方法</strong>：</p>
@@ -541,6 +585,10 @@
     <div class="qa-card" id="q52">
       <div class="qa-q"><span class="qa-id">Q52</span>如何在量化 ML 中防止信息泄漏？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>信息泄漏，就是模型偷偷用到了"预测那一刻根本拿不到的未来信息"，于是回测（模拟考试）成绩漂亮得吓人，一上实盘立刻现原形——本质就是考前看了答案。防它的核心一招：所有数据处理都只能"在训练数据上学规则，再原样套到测试数据上"，绝不能拿全部数据一起算。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>常见泄漏来源</strong>：</p>
         <ol>
@@ -595,6 +643,10 @@ pipe = Pipeline([
     <div class="qa-card" id="q53">
       <div class="qa-q"><span class="qa-id">Q53</span>解释 Attention 机制在多因子选股中的应用</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>传统选股给每个指标（因子）固定的权重。Attention（注意力）机制让模型学会"看情况分配注意力"：不同股票、不同行情下，自动多看重要的因子、少看没用的。好处是还能看出模型在关注谁。但它太灵活，金融噪声大时很容易过拟合，得配上强约束和大量数据。</p>
+        </div>
         <h4>标准答案</h4>
         <p>传统多因子模型对所有因子等权或固定权重组合，Attention 机制允许模型<strong>动态地</strong>、<strong>针对不同股票和不同时期</strong>为因子分配不同权重。</p>
         <p><strong>具体做法</strong>：</p>
@@ -645,6 +697,10 @@ pipe = Pipeline([
     <div class="qa-card" id="q54">
       <div class="qa-q"><span class="qa-id">Q54</span>量化中的集成学习（Ensemble Learning）策略有哪些？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>集成学习就是"三个臭皮匠顶个诸葛亮"，把好几个模型的预测综合起来用。有一点反直觉：它主要不是让你预测得更准，而是让结果更稳、不忽上忽下（降低波动）。在噪声巨大的金融市场里，"稳"往往比"准"更值钱。诀窍是让几个模型尽量不一样、别一起犯同样的错。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>方法</th><th>原理</th><th>量化应用</th></tr></thead>
@@ -697,6 +753,10 @@ pipe = Pipeline([
     <div class="qa-card" id="q55">
       <div class="qa-q"><span class="qa-id">Q55</span>大语言模型（LLM）在量化中有哪些应用？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>LLM 就是 ChatGPT 这类会读会写的 AI。量化里已经在用它读新闻和研报、判断情绪、抽取事件这些"文字活"。但它有两个大坑：一是会"一本正经地胡说"（幻觉），二是会"剧透"——用今天的 AI 去回测两年前的新闻，它可能早就知道后来涨跌了，这是看不见的作弊。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>已落地的应用</strong>：</p>
         <ul>

@@ -25,6 +25,10 @@
     <div class="qa-card" id="q1">
       <div class="qa-q"><span class="qa-id">Q1</span>什么是条件概率？贝叶斯公式的直觉是什么？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>条件概率就是"已经知道一件事后，另一件事发生的可能性"，比如"已知今天下雨，地面是湿的概率"。贝叶斯公式讲的是怎么"用新证据修正老判断"：心里先有个猜测，看到新线索后按公式把猜测调得更准。一句话：边看边改主意。</p>
+        </div>
         <h4>标准答案</h4>
         <p>条件概率表示在 $B$ 已发生的条件下 $A$ 发生的概率：</p>
         $$P(A \mid B) = \frac{P(A \cap B)}{P(B)}$$
@@ -68,6 +72,10 @@
     <div class="qa-card" id="q2">
       <div class="qa-q"><span class="qa-id">Q2</span>大数定律和中心极限定理的区别是什么？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这两条都讲"多试几次会怎样"。大数定律说：抛硬币次数越多，正面比例越贴近一半（平均值会稳定到真值）。中心极限定理再补一句：不管原始数据长啥样，把很多次的平均值画出来，形状都会变成对称的"钟形"。一个管准不准，一个管波动长什么样。</p>
+        </div>
         <h4>标准答案</h4>
         <ul>
           <li><strong>大数定律（LLN）</strong>：样本均值随样本量增大而趋近于总体均值。强调的是<strong>收敛</strong>。</li>
@@ -111,6 +119,10 @@
     <div class="qa-card" id="q3">
       <div class="qa-q"><span class="qa-id">Q3</span>什么是鞅（Martingale）？它在金融中有什么意义？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>鞅是一种"看不出方向"的随机过程：不论过去怎么走，对下一步的最好预测就是"维持现状"。像一场公平赌局，你现在有 100 块，再玩一把的平均预期还是 100 块。金融里说"折现后的股价是鞅"，意思就是没法靠预测稳赚差价——这正是"市场有效"的数学说法。</p>
+        </div>
         <h4>标准答案</h4>
         <p>鞅是一种随机过程，满足 $E[X_{t+1} \mid \mathcal{F}_t] = X_t$，即给定当前信息，未来期望等于当前值。</p>
         <p><strong>金融意义</strong>：</p>
@@ -154,6 +166,10 @@
     <div class="qa-card" id="q4">
       <div class="qa-q"><span class="qa-id">Q4</span>解释常见的概率分布及其在量化中的应用</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>"分布"就是描述"各种结果各有多大可能"的一张图。这题在列常见图形和用途：正态分布是中间高两边低的对称钟形；"厚尾"指暴涨暴跌这类极端情况比钟形预测得更常见。术语翻译：iid＝每次独立又同规律。记住一句：真实股市的尾巴比正态厚，极端事件没那么罕见。</p>
+        </div>
         <h4>标准答案</h4>
         <table>
           <thead><tr><th>分布</th><th>特征</th><th>量化应用</th></tr></thead>
@@ -202,6 +218,10 @@
     <div class="qa-card" id="q5">
       <div class="qa-q"><span class="qa-id">Q5</span>什么是极大似然估计（MLE）？与矩估计（GMM）有什么区别？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这两个都是"拿数据反推参数"的方法。极大似然（MLE）的思路是"哪组参数最可能生出我手上这批数据，就选哪组"，像反推骰子是不是被做过手脚。矩估计（GMM）更省事，只要求"理论平均值对得上实际平均值"。一句话：MLE 假设多、更准但怕设错；GMM 假设少、更稳。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>MLE</strong>：寻找使样本似然函数达到最大值的参数，常写作：</p>
         $$\theta_{\text{MLE}} = \arg\max_{\theta} L(\theta)$$
@@ -251,6 +271,10 @@
     <div class="qa-card" id="q6">
       <div class="qa-q"><span class="qa-id">Q6</span>假设检验中的 p 值到底是什么？为什么不能说"p 值是假设为真的概率"？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>p 值回答的是："假设这东西其实没用、纯属巧合，那我还能看到现在这么好结果的概率有多大？"p 值越小，说明"光靠运气很难这么好"。注意它不是"结论正确的概率"，这俩是两码事。陷阱：试一千个策略总能蒙中几个"看着很棒"的，那多半是运气而非真本事。</p>
+        </div>
         <h4>标准答案</h4>
         <p>p 值是<strong>在零假设为真的前提下</strong>，观测到当前统计量或更极端值的概率。</p>
         <p>不能说"零假设为真的概率"，因为 p 值是条件概率 $P(\text{data} \mid H_0)$，而不是 $P(H_0 \mid \text{data})$。后者需要贝叶斯框架。</p>
@@ -295,6 +319,10 @@
     <div class="qa-card" id="q7">
       <div class="qa-q"><span class="qa-id">Q7</span>什么是协方差矩阵？为什么在量化中估计协方差矩阵是困难的？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>协方差衡量"两样东西是不是一起涨一起跌"。把一堆资产两两之间这种关系排成一张大表，就是协方差矩阵，它是算"组合整体风险"的关键原料。难点在于：资产一多，要估的数字爆炸增长，可历史数据就那么点，估出来的表充满噪声，照它优化容易得到极端又一上线就亏的仓位。</p>
+        </div>
         <h4>标准答案</h4>
         <p>协方差矩阵 $\Sigma$ 的第 $(i,j)$ 个元素是资产 $i$ 和资产 $j$ 收益率的协方差。它是组合优化、风险管理的核心输入。</p>
         <p><strong>困难之处</strong>：</p>
@@ -346,6 +374,10 @@
     <div class="qa-card" id="q8">
       <div class="qa-q"><span class="qa-id">Q8</span>特征值分解（EVD）和奇异值分解（SVD）有什么区别？在量化中怎么用？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这两个都是"把复杂矩阵拆成几个简单方向"的工具，像用棱镜把白光分成七色。拆完每个方向带一个"重要性分数"，分数大的是主要规律，小的多半是噪声。量化里最常见的用法叫 PCA：对一堆股票收益做这种拆解，最大那个方向往往就是"大盘一起涨跌"。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>EVD</strong>：仅适用于方阵，$\Lambda$ 是特征值对角阵：</p>
         $$A = P \Lambda P^{-1}$$
@@ -388,6 +420,10 @@
     <div class="qa-card" id="q9">
       <div class="qa-q"><span class="qa-id">Q9</span>什么是正定矩阵？为什么协方差矩阵必须半正定？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>"正定/半正定"是矩阵的一种好性质，通俗说就是"不管怎么组合，算出来都不会是负数"。协方差矩阵为什么必须有这性质？因为它算的是组合的"方差"（波动大小），而波动天然不可能小于零。要是你估出来的矩阵违反了这点，那肯定是数据或拼接出了错，得用算法把它掰回合法的样子。</p>
+        </div>
         <h4>标准答案</h4>
         <p>正定矩阵满足：对任意非零向量 $x$，都有</p>
         $$x^\top A x \gt 0$$
@@ -424,6 +460,10 @@
     <div class="qa-card" id="q10">
       <div class="qa-q"><span class="qa-id">Q10</span>什么是平稳性（Stationarity）？为什么要关心它？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>平稳就是"数据的脾气不随时间变"：长期看平均水平和波动幅度都稳定，像室温总在 25 度上下晃。股价不平稳——它会一路漂走、没有固定中心。为什么在意？因为大多数模型都假设数据平稳，硬套在不平稳数据上，会得出"两个毫不相干的东西看着很相关"的假结论。常用解法是改看每天涨跌幅而不是价格本身。</p>
+        </div>
         <h4>标准答案</h4>
         <ul>
           <li><strong>严平稳</strong>：联合分布不随时间平移改变</li>
@@ -463,6 +503,10 @@
     <div class="qa-card" id="q11">
       <div class="qa-q"><span class="qa-id">Q11</span>ARIMA 和 GARCH 模型的区别与联系？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>这俩模型分工不同。ARIMA 管"价格往哪走"（预测平均水平）；GARCH 管"波动有多剧烈"，它抓住一个现象：大涨大跌爱扎堆、平静日子也连成片（叫波动率聚集），就像地震后常有余震。实战常合起来用：ARIMA 猜方向，GARCH 猜这几天是风平浪静还是惊涛骇浪。</p>
+        </div>
         <h4>标准答案</h4>
         <ul>
           <li><strong>ARIMA(p,d,q)</strong>：建模条件均值。描述收益率本身的自回归和移动平均结构。</li>
@@ -502,6 +546,10 @@
     <div class="qa-card" id="q12">
       <div class="qa-q"><span class="qa-id">Q12</span>什么是协整（Cointegration）？和相关性有什么区别？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>相关性看的是"今天你涨我也涨"这种短期同步；协整看的是"长期被一根橡皮筋拴住"：两样东西各自乱走，但它俩的差距总会被拉回某个常态。经典比喻：醉汉牵着狗，各自乱晃（绝对位置没法预测），但狗不会离主人太远（距离稳定）。这正是配对交易的根基——差距拉大了就赌它会缩回去。</p>
+        </div>
         <h4>标准答案</h4>
         <ul>
           <li><strong>相关性</strong>：衡量两个变量线性关联的强度，是静态的</li>
@@ -551,6 +599,10 @@
     <div class="qa-card" id="q13">
       <div class="qa-q"><span class="qa-id">Q13</span>什么是布朗运动？Itô 引理是什么？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>布朗运动就是花粉在水面上那种"完全随机、抖个不停"的路径，常用来描述股价的随机波动。Itô 引理是"随机世界里的换算公式"：普通数学里算变化用链式法则就行，但随机路径太毛糙、抖得太狠，必须多补一个修正项才算得准。一句话：随机版的"链式法则"，多出来的那一项是它的灵魂。</p>
+        </div>
         <h4>标准答案</h4>
         <p><strong>布朗运动（维纳过程）</strong> $W_t$：</p>
         <ul>
@@ -596,6 +648,10 @@
     <div class="qa-card" id="q14">
       <div class="qa-q"><span class="qa-id">Q14</span>几何布朗运动（GBM）的假设和局限是什么？</div>
       <div class="qa-body">
+        <div class="callout eli5">
+          <div class="callout-title">🌱 大白话先懂</div>
+          <p>几何布朗运动是给股价建模最经典的"标准模型"：假定股价像随机抖动的指数曲线，永远为正、按固定幅度上下波动。它有三条理想假设：波动幅度恒定、不会突然跳空、涨跌互不影响。可现实总打脸——大消息会让股价一夜跳空、暴跌比预测更频繁、波动还忽大忽小。所以后来才有一堆"打补丁"的改进模型。</p>
+        </div>
         <h4>标准答案</h4>
         <p>GBM 模型：</p>
         $$dS_t = \mu S_t \, dt + \sigma S_t \, dW_t$$
